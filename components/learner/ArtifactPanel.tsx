@@ -1,9 +1,13 @@
-import { Download, ExternalLink, FileText } from "lucide-react";
+"use client";
+
+import { Download, ExternalLink, FileText, PanelRightClose, PanelRightOpen } from "lucide-react";
 import type { Artifact, ArtifactCategory } from "@/src/types/database";
 import { isHttpUrl } from "@/src/lib/validation";
 
 type ArtifactPanelProps = {
   artifacts: Artifact[];
+  isCollapsed?: boolean;
+  onToggle?: () => void;
 };
 
 const categoryLabels: Record<ArtifactCategory, string> = {
@@ -15,7 +19,7 @@ const categoryLabels: Record<ArtifactCategory, string> = {
 
 const categoryOrder: ArtifactCategory[] = ["practice", "reference", "external", "preparation"];
 
-export default function ArtifactPanel({ artifacts }: ArtifactPanelProps) {
+export default function ArtifactPanel({ artifacts, isCollapsed = false, onToggle }: ArtifactPanelProps) {
   const groupedArtifacts = categoryOrder
     .map((category) => ({
       category,
@@ -24,12 +28,36 @@ export default function ArtifactPanel({ artifacts }: ArtifactPanelProps) {
     .filter((group) => group.items.length > 0);
 
   return (
-    <aside className="rounded-lg border border-white/80 bg-white/92 p-5 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl xl:sticky xl:top-6">
-      <div className="mb-5">
-        <p className="text-sm font-semibold text-hanwha-orange">학습 자료</p>
-        <h2 className="mt-1 text-xl font-bold tracking-normal text-cool-ink">자료실</h2>
+    <aside className="rounded-lg border border-white/80 bg-white/92 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl xl:sticky xl:top-4">
+      <div className="flex items-center justify-between gap-3 border-b border-cool-mist px-4 py-4">
+        {isCollapsed ? (
+          <span className="sr-only">자료실</span>
+        ) : (
+          <div>
+            <p className="text-sm font-semibold text-hanwha-orange">학습 자료</p>
+            <h2 className="mt-1 text-xl font-black tracking-normal text-cool-ink">자료실</h2>
+          </div>
+        )}
+        {onToggle ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-cool-mist bg-cool-ice text-cool-ink transition hover:border-cool-blue/50 hover:bg-white hover:text-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
+            title={isCollapsed ? "학습자료 펼치기" : "학습자료 접기"}
+          >
+            {isCollapsed ? <PanelRightOpen aria-hidden="true" size={18} /> : <PanelRightClose aria-hidden="true" size={18} />}
+          </button>
+        ) : null}
       </div>
 
+      {isCollapsed ? (
+        <div className="flex min-h-[420px] items-start justify-center px-3 py-4">
+          <p className="mt-2 [writing-mode:vertical-rl] text-sm font-black tracking-[0.18em] text-cool-navy">
+            학습자료
+          </p>
+        </div>
+      ) : (
+        <div className="p-5">
       {groupedArtifacts.length === 0 ? (
         <div className="rounded-md border border-dashed border-cool-mist bg-cool-ice p-5 text-sm leading-6 text-slate-600">
           현재 등록된 학습 자료가 없습니다.
@@ -46,6 +74,8 @@ export default function ArtifactPanel({ artifacts }: ArtifactPanelProps) {
               </div>
             </section>
           ))}
+        </div>
+      )}
         </div>
       )}
     </aside>

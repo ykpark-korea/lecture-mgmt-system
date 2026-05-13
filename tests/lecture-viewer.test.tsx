@@ -8,6 +8,7 @@ describe("LectureViewer", () => {
   it("renders a fullscreen control for the embedded lecture", () => {
     render(<LectureViewer lectureId="lecture-1" title="HPMP" />);
 
+    expect(screen.getByText("강의 자료")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "전체 보기" })).toBeInTheDocument();
     expect(screen.getByTitle("새 탭에서 열기")).toHaveAttribute("href", "/api/lectures/lecture-1/signed-url");
   });
