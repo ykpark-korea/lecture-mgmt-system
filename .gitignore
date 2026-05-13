@@ -11,4 +11,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+test-results/
+playwright-report/
+blob-report/
+
 .DS_Store
