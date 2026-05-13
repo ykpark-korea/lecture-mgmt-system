@@ -70,3 +70,4 @@ npm run lint
 Supabase storage buckets for lecture HTML, lecture artifacts, and lecture images must stay private. The app serves access through server-side authorization flows that proxy private assets or issue access-checked URLs after a learner or admin session is verified; do not expose permanent public URLs.
 
 Learner and admin access use code-based sessions. Learner codes grant access to eligible lectures; admin codes grant access to the operating console.
+# lecture-mgmt-system
