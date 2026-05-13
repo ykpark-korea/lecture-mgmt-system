@@ -33,6 +33,31 @@ function verifySignature(signature: string, expected: string) {
   return timingSafeEqual(signatureBuffer, expectedBuffer);
 }
 
+function isNonEmptyString(value: unknown) {
+  return typeof value === "string" && value.length > 0;
+}
+
+function validateSessionPayload(payload: unknown): AppSession {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Invalid session payload");
+  }
+
+  const session = payload as Partial<AppSession>;
+  if (!Number.isFinite(session.expiresAt)) {
+    throw new Error("Invalid session payload");
+  }
+
+  if (session.role === "learner" && isNonEmptyString(session.accessCodeId)) {
+    return session as LearnerSession;
+  }
+
+  if (session.role === "admin" && isNonEmptyString(session.adminCodeId)) {
+    return session as AdminSession;
+  }
+
+  throw new Error("Invalid session payload");
+}
+
 export async function createSessionToken(session: AppSession, secret: string) {
   const payload = encodeBase64Url(JSON.stringify(session));
   const signature = sign(payload, secret);
@@ -52,13 +77,14 @@ export async function parseSessionToken(token: string, secret: string): Promise<
     throw new Error("Invalid session signature");
   }
 
-  let session: AppSession;
+  let parsed: unknown;
   try {
-    session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as AppSession;
+    parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
   } catch {
     throw new Error("Invalid session token");
   }
 
+  const session = validateSessionPayload(parsed);
   if (session.expiresAt <= Date.now()) {
     throw new Error("Session expired");
   }

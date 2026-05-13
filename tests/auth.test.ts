@@ -44,4 +44,31 @@ describe("auth", () => {
     );
     expect(payload).not.toBe(tamperedPayload);
   });
+
+  it("rejects signed payloads with an unknown role", async () => {
+    const token = await createSessionToken(
+      { role: "editor", accessCodeId: "code-1", expiresAt: Date.now() + 60_000 } as never,
+      "secret"
+    );
+
+    await expect(parseSessionToken(token, "secret")).rejects.toThrow("Invalid session payload");
+  });
+
+  it("rejects signed learner payloads without an access code id", async () => {
+    const token = await createSessionToken(
+      { role: "learner", accessCodeId: "", expiresAt: Date.now() + 60_000 } as never,
+      "secret"
+    );
+
+    await expect(parseSessionToken(token, "secret")).rejects.toThrow("Invalid session payload");
+  });
+
+  it("rejects signed admin payloads without a finite expiration", async () => {
+    const token = await createSessionToken(
+      { role: "admin", adminCodeId: "admin-1", expiresAt: Number.NaN } as never,
+      "secret"
+    );
+
+    await expect(parseSessionToken(token, "secret")).rejects.toThrow("Invalid session payload");
+  });
 });

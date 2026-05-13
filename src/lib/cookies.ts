@@ -64,3 +64,23 @@ export async function readSession(name: string): Promise<AppSession | null> {
     return null;
   }
 }
+
+export async function readLearnerSession(): Promise<LearnerSession | null> {
+  const session = await readSession(learnerCookieName);
+
+  if (session?.role !== "learner") {
+    return null;
+  }
+
+  return session;
+}
+
+export async function readAdminSession(): Promise<AdminSession | null> {
+  const session = await readSession(adminCookieName);
+
+  if (session?.role !== "admin") {
+    return null;
+  }
+
+  return session;
+}
