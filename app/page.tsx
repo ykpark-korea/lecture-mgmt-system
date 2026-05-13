@@ -11,8 +11,8 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <main className="min-h-screen px-5 py-8 sm:px-8 lg:px-10">
-      <section className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center gap-6 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]">
-        <div className="rounded-lg border border-white/80 bg-white/86 p-6 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl sm:p-8 lg:p-10">
+      <section className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center gap-6 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:items-stretch">
+        <div className="flex h-full flex-col justify-center rounded-lg border border-white/80 bg-white/86 p-6 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl sm:p-8 lg:min-h-[42rem] lg:p-10">
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-cool-mist bg-cool-ice px-3 py-2 text-sm font-semibold text-cool-navy">
             <Sparkles aria-hidden="true" size={16} className="text-cool-aqua" />
             Summer Cool Learning Portal
@@ -63,8 +63,8 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </div>
 
-        <div className="rounded-lg border border-white/80 bg-white/72 p-4 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl sm:p-5">
-          <div className="relative flex min-h-[22rem] items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-white via-cool-ice to-cool-sky/60 lg:min-h-[42rem]">
+        <div className="h-full rounded-lg border border-white/80 bg-white/72 p-4 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl sm:p-5 lg:min-h-[42rem]">
+          <div className="relative flex min-h-[22rem] items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-white via-cool-ice to-cool-sky/60 lg:h-full lg:min-h-0">
             <Image
               src="/hero-full.png"
               alt="한화손보 사내강의 대표 이미지"
