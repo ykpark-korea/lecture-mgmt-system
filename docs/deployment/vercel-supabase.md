@@ -33,7 +33,7 @@ Run the initial schema before deploying:
 supabase/migrations/001_initial_schema.sql
 ```
 
-Bootstrap the first active admin code before opening the admin console. Admin code creation requires an existing admin session, so a fresh deployment needs one direct insert.
+Bootstrap the first active admin code before opening the admin console. In the MVP, admin-code bootstrap and rotation are done by generating a hash and inserting or updating `admin_codes` directly in the Supabase SQL editor. The in-app code management screen is for learner access codes, not admin codes.
 
 Generate the hash with the same format as `src/lib/crypto.ts`, using the production `SESSION_SECRET` and the first admin code:
 
