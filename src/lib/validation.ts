@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { StorageBucket } from "@/src/lib/storage";
 
 export const learnerCodeSchema = z.string().trim().min(3).max(64).regex(/^[A-Za-z0-9_-]+$/);
 export const adminCodeSchema = learnerCodeSchema;
@@ -24,6 +25,18 @@ export const allowedArtifactExtensions = [
   ".webp"
 ] as const;
 export const allowedImageExtensions = [".png", ".jpg", ".jpeg", ".webp", ".gif"] as const;
+export const allowedArtifactContentTypes = [
+  "application/pdf",
+  "application/zip",
+  "application/octet-stream",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/csv",
+  "image/png",
+  "image/jpeg",
+  "image/webp"
+] as const;
 
 function hasAllowedExtension(fileName: string, extensions: readonly string[]) {
   const lower = fileName.toLowerCase();
@@ -40,6 +53,50 @@ export function isAllowedArtifactFile(fileName: string) {
 
 export function isAllowedImageFile(fileName: string) {
   return hasAllowedExtension(fileName, allowedImageExtensions);
+}
+
+export function isValidStoragePath(bucket: StorageBucket, path: string) {
+  const parts = path.split("/");
+
+  if (
+    path.startsWith("/") ||
+    path.includes("\\") ||
+    path.includes("..") ||
+    parts.length !== 2 ||
+    parts.some((part) => part.length === 0)
+  ) {
+    return false;
+  }
+
+  const [owner, fileName] = parts;
+
+  if (!/^[A-Za-z0-9_-]+$/.test(owner) || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)) {
+    return false;
+  }
+
+  if (bucket === "lecture-html") {
+    return isAllowedHtmlFile(fileName);
+  }
+
+  if (bucket === "lecture-images") {
+    return isAllowedImageFile(fileName);
+  }
+
+  return isAllowedArtifactFile(fileName);
+}
+
+export function isAllowedUploadContentType(bucket: StorageBucket, fileName: string, contentType: string) {
+  const normalizedContentType = contentType.trim().toLowerCase();
+
+  if (bucket === "lecture-html") {
+    return isAllowedHtmlFile(fileName) && ["text/html", "application/octet-stream"].includes(normalizedContentType);
+  }
+
+  if (bucket === "lecture-images") {
+    return isAllowedImageFile(fileName) && normalizedContentType.startsWith("image/");
+  }
+
+  return isAllowedArtifactFile(fileName) && allowedArtifactContentTypes.includes(normalizedContentType as never);
 }
 
 export function isHttpUrl(value: string | null | undefined): value is string {
@@ -60,8 +117,22 @@ export const createLectureSchema = z.object({
   title: z.string().trim().min(1).max(160),
   description: z.string().trim().max(1000).default(""),
   status: lectureStatusSchema.default("draft"),
-  htmlStoragePath: z.string().trim().min(1).optional(),
-  thumbnailStoragePath: z.string().trim().min(1).optional(),
+  htmlStoragePath: z
+    .string()
+    .trim()
+    .min(1)
+    .refine((path) => isValidStoragePath("lecture-html", path), {
+      message: "htmlStoragePath must be a safe lecture-html path ending in .html"
+    })
+    .optional(),
+  thumbnailStoragePath: z
+    .string()
+    .trim()
+    .min(1)
+    .refine((path) => isValidStoragePath("lecture-images", path), {
+      message: "thumbnailStoragePath must be a safe lecture-images path"
+    })
+    .optional(),
   usesDefaultHero: z.boolean().default(true),
   sortOrder: z.number().int().min(0).default(0)
 });
@@ -96,6 +167,12 @@ export const artifactSchema = z
     if (value.type === "file") {
       if (!value.storagePath) {
         context.addIssue({ code: "custom", path: ["storagePath"], message: "file artifact requires storagePath" });
+      } else if (!isValidStoragePath("lecture-artifacts", value.storagePath)) {
+        context.addIssue({
+          code: "custom",
+          path: ["storagePath"],
+          message: "file artifact requires a safe lecture-artifacts storagePath"
+        });
       }
 
       if (value.url) {

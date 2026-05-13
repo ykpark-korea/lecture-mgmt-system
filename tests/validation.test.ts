@@ -6,6 +6,8 @@ import {
   isAllowedArtifactFile,
   isAllowedHtmlFile,
   isAllowedImageFile,
+  isAllowedUploadContentType,
+  isValidStoragePath,
   learnerCodeSchema
 } from "@/src/lib/validation";
 
@@ -46,6 +48,41 @@ describe("validation", () => {
     });
   });
 
+  it("validates bucket-specific persisted storage paths", () => {
+    expect(isValidStoragePath("lecture-html", `${lectureId}/lecture.html`)).toBe(true);
+    expect(isValidStoragePath("lecture-html", `/lecture.html`)).toBe(false);
+    expect(isValidStoragePath("lecture-html", `${lectureId}/nested/lecture.html`)).toBe(false);
+    expect(isValidStoragePath("lecture-html", `${lectureId}/lecture.pdf`)).toBe(false);
+    expect(isValidStoragePath("lecture-images", `${lectureId}/hero.webp`)).toBe(true);
+    expect(isValidStoragePath("lecture-artifacts", `${lectureId}/practice.zip`)).toBe(true);
+    expect(isValidStoragePath("lecture-artifacts", `${lectureId}/../practice.zip`)).toBe(false);
+  });
+
+  it("rejects unsafe lecture storage paths", () => {
+    expect(() =>
+      createLectureSchema.parse({
+        title: "Lecture",
+        htmlStoragePath: `${lectureId}/lecture.pdf`
+      })
+    ).toThrow();
+
+    expect(() =>
+      createLectureSchema.parse({
+        title: "Lecture",
+        thumbnailStoragePath: `${lectureId}/thumbnail.pdf`
+      })
+    ).toThrow();
+  });
+
+  it("validates upload content type by bucket and extension", () => {
+    expect(isAllowedUploadContentType("lecture-html", "lecture.html", "text/html")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-html", "lecture.html", "application/pdf")).toBe(false);
+    expect(isAllowedUploadContentType("lecture-images", "hero.webp", "image/webp")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-images", "hero.pdf", "image/png")).toBe(false);
+    expect(isAllowedUploadContentType("lecture-artifacts", "practice.zip", "application/octet-stream")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-artifacts", "script.exe", "application/octet-stream")).toBe(false);
+  });
+
   it("requires access code end time after start time", () => {
     expect(() =>
       createAccessCodeSchema.parse({
@@ -64,6 +101,18 @@ describe("validation", () => {
         type: "file",
         category: "practice",
         title: "Practice file"
+      })
+    ).toThrow();
+  });
+
+  it("rejects unsafe file artifact storage paths", () => {
+    expect(() =>
+      artifactSchema.parse({
+        lectureId,
+        type: "file",
+        category: "practice",
+        title: "Practice file",
+        storagePath: `${lectureId}/script.exe`
       })
     ).toThrow();
   });

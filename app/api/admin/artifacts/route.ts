@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { readAdminSession } from "@/src/lib/cookies";
+import { requireActiveAdminSession } from "@/src/lib/admin";
 import { createSupabaseServiceClient } from "@/src/lib/supabase";
 import type { Database } from "@/src/types/database";
 import { artifactSchema } from "@/src/lib/validation";
@@ -14,7 +14,7 @@ type InsertTable<TPayload> = {
 };
 
 export async function GET(request: NextRequest) {
-  if (!(await readAdminSession())) {
+  if (!(await requireActiveAdminSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await readAdminSession())) {
+  if (!(await requireActiveAdminSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
