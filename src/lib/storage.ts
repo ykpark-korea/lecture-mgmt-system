@@ -67,7 +67,12 @@ export async function createSignedDownloadUrl(
 export async function createPrivateObjectResponse(
   bucket: StorageBucket,
   path: string,
-  expiresInSeconds = 30
+  expiresInSeconds = 30,
+  options: {
+    contentType?: string;
+    contentDisposition?: "inline" | "attachment";
+    fileName?: string;
+  } = {}
 ): Promise<Response> {
   const signedUrl = await createSignedDownloadUrl(bucket, path, expiresInSeconds);
   const upstream = await fetch(signedUrl, { cache: "no-store" });
@@ -90,6 +95,17 @@ export async function createPrivateObjectResponse(
     if (headerValue) {
       headers.set(headerName, headerValue);
     }
+  }
+
+  if (options.contentType) {
+    headers.set("content-type", options.contentType);
+  }
+
+  if (options.contentDisposition) {
+    headers.set(
+      "content-disposition",
+      buildContentDisposition(options.contentDisposition, options.fileName ?? path.split("/").pop() ?? "download")
+    );
   }
 
   return new Response(upstream.body, {
@@ -119,4 +135,10 @@ export async function createSignedUploadUrl(bucket: StorageBucket, path: string)
   }
 
   return data.signedUrl;
+}
+
+function buildContentDisposition(disposition: "inline" | "attachment", fileName: string) {
+  const safeFileName = fileName.replace(/[\\"]/g, "_").replace(/[\r\n]/g, " ").trim() || "download";
+
+  return `${disposition}; filename="${safeFileName}"; filename*=UTF-8''${encodeURIComponent(safeFileName)}`;
 }

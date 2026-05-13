@@ -23,5 +23,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Lecture not found" }, { status: 404 });
   }
 
-  return createPrivateObjectResponse("lecture-html", lecture.html_storage_path);
+  return createPrivateObjectResponse("lecture-html", lecture.html_storage_path, 30, {
+    contentType: "text/html; charset=utf-8",
+    contentDisposition: "inline"
+  });
 }

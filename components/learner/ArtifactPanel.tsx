@@ -89,6 +89,7 @@ function ArtifactLink({ artifact }: { artifact: Artifact }) {
   return (
     <a
       href={href}
+      download={isFile ? "" : undefined}
       target={isFile ? undefined : "_blank"}
       rel={isFile ? undefined : "noreferrer"}
       className="group flex items-start gap-3 rounded-md border border-cool-mist bg-cool-ice px-4 py-3 text-sm transition hover:border-cool-blue/50 hover:bg-white"

@@ -30,5 +30,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Artifact not found" }, { status: 404 });
   }
 
-  return createPrivateObjectResponse("lecture-artifacts", artifact.storage_path);
+  return createPrivateObjectResponse("lecture-artifacts", artifact.storage_path, 30, {
+    contentDisposition: "attachment"
+  });
 }

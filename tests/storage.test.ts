@@ -1,8 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildStoragePath } from "@/src/lib/storage";
+import { buildStoragePath, createPrivateObjectResponse } from "@/src/lib/storage";
+
+const createSignedUrl = vi.fn();
 
 vi.mock("@/src/lib/supabase", () => ({
-  createSupabaseServiceClient: vi.fn()
+  createSupabaseServiceClient: () => ({
+    storage: {
+      from: () => ({
+        createSignedUrl
+      })
+    }
+  })
 }));
 
 describe("storage", () => {
@@ -38,5 +46,45 @@ describe("storage", () => {
     expect(path).toMatch(/^lecture-1\/file-[a-z0-9]+\.pdf$/);
     expect(path).not.toBe("lecture-1/.pdf");
     expect(buildStoragePath("lecture-artifacts", "lecture-1", "!!!.pdf")).toBe(path);
+  });
+
+  it("overrides proxied content headers for rendered lecture HTML", async () => {
+    createSignedUrl.mockResolvedValueOnce({ data: { signedUrl: "https://signed.example/lecture" }, error: null });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(
+        new Response("<html></html>", {
+          headers: { "content-type": "text/plain" }
+        })
+      )
+    );
+
+    const response = await createPrivateObjectResponse("lecture-html", "lecture-1/lecture.html", 30, {
+      contentType: "text/html; charset=utf-8",
+      contentDisposition: "inline",
+      fileName: "lecture.html"
+    });
+
+    expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
+    expect(response.headers.get("content-disposition")).toContain("inline");
+  });
+
+  it("forces file artifacts to download", async () => {
+    createSignedUrl.mockResolvedValueOnce({ data: { signedUrl: "https://signed.example/artifact" }, error: null });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(
+        new Response("pdf", {
+          headers: { "content-type": "application/pdf" }
+        })
+      )
+    );
+
+    const response = await createPrivateObjectResponse("lecture-artifacts", "lecture-1/practice.pdf", 30, {
+      contentDisposition: "attachment"
+    });
+
+    expect(response.headers.get("content-disposition")).toContain("attachment");
+    expect(response.headers.get("content-disposition")).toContain("practice.pdf");
   });
 });
