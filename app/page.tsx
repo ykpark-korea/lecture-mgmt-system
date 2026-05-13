@@ -28,7 +28,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <div className="mb-8">
               <p className="text-sm font-semibold text-cool-blue">Hanwha Lecture Portal</p>
               <h1 className="mt-3 text-3xl font-bold tracking-normal text-cool-ink">
-                수강자 로그인
+                사내강의 접속
               </h1>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 안내받은 입장 코드를 입력하면 신청 가능한 강의 목록을 확인할 수 있습니다.
@@ -38,7 +38,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <form action="/api/learner/login" method="POST" className="space-y-5">
               <div>
                 <label htmlFor="code" className="block text-sm font-semibold text-cool-ink">
-                  입장 코드
+                  접속 코드
                 </label>
                 <input
                   id="code"
