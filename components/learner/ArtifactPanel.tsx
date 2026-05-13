@@ -24,7 +24,7 @@ export default function ArtifactPanel({ artifacts }: ArtifactPanelProps) {
     .filter((group) => group.items.length > 0);
 
   return (
-    <aside className="rounded-lg border border-cool-mist bg-white/95 p-5 shadow-soft">
+    <aside className="rounded-lg border border-white/80 bg-white/92 p-5 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl xl:sticky xl:top-6">
       <div className="mb-5">
         <p className="text-sm font-semibold text-hanwha-orange">학습 자료</p>
         <h2 className="mt-1 text-xl font-bold tracking-normal text-cool-ink">자료실</h2>
@@ -38,7 +38,7 @@ export default function ArtifactPanel({ artifacts }: ArtifactPanelProps) {
         <div className="space-y-6">
           {groupedArtifacts.map((group) => (
             <section key={group.category}>
-              <h3 className="text-sm font-bold text-cool-ink">{categoryLabels[group.category]}</h3>
+          <h3 className="text-sm font-bold text-cool-ink">{categoryLabels[group.category]}</h3>
               <div className="mt-3 space-y-3">
                 {group.items.map((artifact) => (
                   <ArtifactLink key={artifact.id} artifact={artifact} />

@@ -9,9 +9,9 @@ export default function AdminSettingsPage() {
 
   return (
     <AdminShell>
-      <section className="rounded-lg border border-cool-mist bg-white p-6 shadow-soft">
-        <p className="text-sm font-semibold text-cool-blue">Settings</p>
-        <h1 className="mt-2 text-2xl font-bold">시스템 설정</h1>
+      <section className="rounded-lg border border-white/80 bg-white/86 p-6 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl">
+        <p className="text-sm font-bold text-cool-blue">Settings</p>
+        <h1 className="mt-2 text-3xl font-black">시스템 설정</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           관리자 코드, 기본 이미지, 업로드 제한을 확인합니다.
         </p>

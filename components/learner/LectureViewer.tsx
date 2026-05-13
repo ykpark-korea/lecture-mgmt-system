@@ -24,7 +24,7 @@ export default function LectureViewer({ lectureId, title }: LectureViewerProps) 
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-cool-mist bg-white shadow-soft">
+    <section className="overflow-hidden rounded-lg border border-white/80 bg-white/92 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-3 border-b border-cool-mist bg-white/90 px-5 py-4">
         <p className="text-sm font-semibold text-cool-ink">강의 플레이어</p>
         <div className="flex items-center gap-2">

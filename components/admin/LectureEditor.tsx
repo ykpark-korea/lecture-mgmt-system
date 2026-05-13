@@ -183,7 +183,7 @@ export function LectureEditor() {
   }
 
   return (
-    <section className="rounded-lg border border-cool-mist bg-white p-6 shadow-soft">
+    <section className="rounded-lg border border-white/80 bg-white/86 p-6 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl">
       <div>
         <p className="text-sm font-semibold text-cool-blue">Lecture</p>
         <h2 className="mt-2 text-xl font-bold text-cool-ink">강좌 만들기</h2>

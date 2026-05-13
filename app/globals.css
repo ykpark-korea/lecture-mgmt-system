@@ -6,6 +6,7 @@
   color: #172033;
   background: #f8fbff;
   font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  font-feature-settings: "tnum";
 }
 
 * {
@@ -20,11 +21,26 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 12% 10%, rgba(141, 223, 210, 0.26), transparent 28rem),
-    radial-gradient(circle at 86% 8%, rgba(79, 143, 207, 0.14), transparent 30rem),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.88) 34%, rgba(232, 247, 252, 0.54)),
+    linear-gradient(115deg, rgba(255, 255, 255, 0.78) 0 22%, transparent 22% 100%),
+    radial-gradient(circle at 8% 7%, rgba(141, 223, 210, 0.34), transparent 25rem),
+    radial-gradient(circle at 82% 4%, rgba(95, 212, 232, 0.22), transparent 28rem),
+    radial-gradient(circle at 80% 84%, rgba(79, 143, 207, 0.16), transparent 30rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.9) 36%, rgba(232, 247, 252, 0.62)),
     #f8fbff;
   color: #172033;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(79, 143, 207, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 143, 207, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.48), transparent 78%);
 }
 
 button,
@@ -37,4 +53,30 @@ textarea {
 ::selection {
   background: rgba(141, 223, 210, 0.48);
   color: #172033;
+}
+
+input,
+select,
+textarea {
+  color: #172033;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8aa0b8;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #8ddfd2, #4f8fcf);
+  border: 3px solid #f8fbff;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fbff;
 }

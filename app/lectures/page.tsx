@@ -33,7 +33,7 @@ export default async function LecturesPage() {
         />
 
         {lectures.length === 0 ? (
-          <section className="rounded-lg border border-dashed border-cool-mist bg-white/84 p-8 text-center shadow-soft">
+          <section className="rounded-lg border border-dashed border-cool-mist bg-white/84 p-10 text-center shadow-glass backdrop-blur-xl">
             <h2 className="text-xl font-bold text-cool-ink">현재 열람 가능한 강의가 없습니다</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               안내받은 수강 기간 또는 강의 공개 일정을 다시 확인해 주세요.

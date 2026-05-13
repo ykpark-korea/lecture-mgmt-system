@@ -167,7 +167,7 @@ export function ArtifactEditor() {
     : artifacts;
 
   return (
-    <section className="rounded-lg border border-cool-mist bg-white p-6 shadow-soft">
+    <section className="rounded-lg border border-white/80 bg-white/86 p-6 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-cool-blue">Artifacts</p>
