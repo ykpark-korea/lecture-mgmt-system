@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { readAdminSession } from "@/src/lib/cookies";
+import { requireActiveAdminSession } from "@/src/lib/admin";
 
 const navItems = [
   { href: "/admin", label: "운영 현황" },
@@ -11,7 +11,7 @@ const navItems = [
 ];
 
 export async function AdminShell({ children }: { children: ReactNode }) {
-  const session = await readAdminSession();
+  const session = await requireActiveAdminSession();
 
   if (!session) {
     redirect("/admin/login");

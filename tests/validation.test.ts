@@ -36,6 +36,7 @@ describe("validation", () => {
   it("allows image uploads only for common web image extensions", () => {
     expect(isAllowedImageFile("hero.webp")).toBe(true);
     expect(isAllowedImageFile("hero.pdf")).toBe(false);
+    expect(isAllowedImageFile("hero.gif")).toBe(false);
   });
 
   it("defaults optional lecture creation fields", () => {
@@ -78,6 +79,10 @@ describe("validation", () => {
     expect(isAllowedUploadContentType("lecture-html", "lecture.html", "text/html")).toBe(true);
     expect(isAllowedUploadContentType("lecture-html", "lecture.html", "application/pdf")).toBe(false);
     expect(isAllowedUploadContentType("lecture-images", "hero.webp", "image/webp")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-images", "hero.png", "image/png")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-images", "hero.jpg", "image/jpeg")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-images", "hero.png", "image/svg+xml")).toBe(false);
+    expect(isAllowedUploadContentType("lecture-images", "hero.png", "image/jpeg")).toBe(false);
     expect(isAllowedUploadContentType("lecture-images", "hero.pdf", "image/png")).toBe(false);
     expect(isAllowedUploadContentType("lecture-artifacts", "practice.zip", "application/octet-stream")).toBe(true);
     expect(isAllowedUploadContentType("lecture-artifacts", "script.exe", "application/octet-stream")).toBe(false);

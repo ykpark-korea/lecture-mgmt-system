@@ -24,7 +24,7 @@ export const allowedArtifactExtensions = [
   ".jpeg",
   ".webp"
 ] as const;
-export const allowedImageExtensions = [".png", ".jpg", ".jpeg", ".webp", ".gif"] as const;
+export const allowedImageExtensions = [".png", ".jpg", ".jpeg", ".webp"] as const;
 export const allowedArtifactContentTypes = [
   "application/pdf",
   "application/zip",
@@ -93,10 +93,28 @@ export function isAllowedUploadContentType(bucket: StorageBucket, fileName: stri
   }
 
   if (bucket === "lecture-images") {
-    return isAllowedImageFile(fileName) && normalizedContentType.startsWith("image/");
+    return isAllowedImageContentType(fileName, normalizedContentType);
   }
 
   return isAllowedArtifactFile(fileName) && allowedArtifactContentTypes.includes(normalizedContentType as never);
+}
+
+function isAllowedImageContentType(fileName: string, contentType: string) {
+  const lower = fileName.toLowerCase();
+
+  if (lower.endsWith(".png")) {
+    return contentType === "image/png";
+  }
+
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+    return contentType === "image/jpeg";
+  }
+
+  if (lower.endsWith(".webp")) {
+    return contentType === "image/webp";
+  }
+
+  return false;
 }
 
 export function isHttpUrl(value: string | null | undefined): value is string {
