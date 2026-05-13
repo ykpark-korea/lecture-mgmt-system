@@ -1,5 +1,11 @@
 import { createSupabaseServiceClient } from "@/src/lib/supabase";
-import type { Lecture, LectureStatus } from "@/src/types/database";
+import type { AccessCode, Lecture, LectureStatus } from "@/src/types/database";
+
+export interface AccessCodeVisibilityInput {
+  is_active: boolean;
+  starts_at: string;
+  ends_at: string;
+}
 
 export interface LectureVisibilityInput {
   status: LectureStatus;
@@ -30,8 +36,39 @@ export function isLectureVisibleForCode(
   return startsAt <= now && endsAt >= now;
 }
 
-export async function listLecturesForAccessCode(accessCodeId: string): Promise<Lecture[]> {
+export function isAccessCodeUsableForLearner(
+  accessCode: AccessCodeVisibilityInput,
+  now = new Date()
+): boolean {
+  if (!accessCode.is_active) {
+    return false;
+  }
+
+  const startsAt = new Date(accessCode.starts_at);
+  const endsAt = new Date(accessCode.ends_at);
+
+  return startsAt <= now && endsAt >= now;
+}
+
+export async function listLecturesForAccessCode(
+  accessCodeId: string,
+  now = new Date()
+): Promise<Lecture[]> {
   const supabase = createSupabaseServiceClient();
+  const { data: accessCode, error: accessCodeError } = await supabase
+    .from("access_codes")
+    .select("*")
+    .eq("id", accessCodeId)
+    .maybeSingle();
+
+  if (accessCodeError) {
+    throw accessCodeError;
+  }
+
+  if (!accessCode || !isAccessCodeUsableForLearner(accessCode as AccessCode, now)) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from("lecture_access_codes")
     .select("sort_order, lectures(*)")
@@ -45,14 +82,15 @@ export async function listLecturesForAccessCode(accessCodeId: string): Promise<L
   return ((data ?? []) as LectureAccessCodeRow[])
     .map((row) => row.lectures)
     .filter((lecture): lecture is Lecture => Boolean(lecture))
-    .filter((lecture) => isLectureVisibleForCode(lecture));
+    .filter((lecture) => isLectureVisibleForCode(lecture, now));
 }
 
 export async function getAuthorizedLecture(
   accessCodeId: string,
-  lectureId: string
+  lectureId: string,
+  now = new Date()
 ): Promise<Lecture | null> {
-  const lectures = await listLecturesForAccessCode(accessCodeId);
+  const lectures = await listLecturesForAccessCode(accessCodeId, now);
 
   return lectures.find((lecture) => lecture.id === lectureId) ?? null;
 }

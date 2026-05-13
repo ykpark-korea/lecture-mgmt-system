@@ -13,6 +13,10 @@ export function buildStoragePath(bucket: StorageBucket, ownerId: string, fileNam
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+  if (!/[a-z0-9]/.test(safeName)) {
+    throw new Error("Storage file name must include at least one alphanumeric character");
+  }
+
   return `${ownerId}/${safeName}`;
 }
 

@@ -27,3 +27,19 @@ export async function getArtifact(artifactId: string): Promise<Artifact> {
 
   return data;
 }
+
+export async function getActiveArtifact(artifactId: string): Promise<Artifact | null> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("artifacts")
+    .select("*")
+    .eq("id", artifactId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
