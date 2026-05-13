@@ -8,7 +8,10 @@ import {
   isAllowedImageFile,
   isAllowedUploadContentType,
   isValidStoragePath,
-  learnerCodeSchema
+  linkLectureAccessCodeSchema,
+  learnerCodeSchema,
+  updateAccessCodeSchema,
+  updateLectureSchema
 } from "@/src/lib/validation";
 
 describe("validation", () => {
@@ -73,6 +76,68 @@ describe("validation", () => {
         thumbnailStoragePath: `${lectureId}/thumbnail.pdf`
       })
     ).toThrow();
+  });
+
+  it("accepts lecture publish windows only when the end is after the start", () => {
+    expect(
+      createLectureSchema.parse({
+        title: "Lecture",
+        publishedStartsAt: "2026-05-13T09:00:00.000Z",
+        publishedEndsAt: "2026-05-13T10:00:00.000Z"
+      })
+    ).toMatchObject({
+      publishedStartsAt: "2026-05-13T09:00:00.000Z",
+      publishedEndsAt: "2026-05-13T10:00:00.000Z"
+    });
+
+    expect(() =>
+      createLectureSchema.parse({
+        title: "Lecture",
+        publishedStartsAt: "2026-05-13T09:00:00.000Z",
+        publishedEndsAt: "2026-05-13T09:00:00.000Z"
+      })
+    ).toThrow();
+  });
+
+  it("requires at least one lecture update field and validates paths and publish windows", () => {
+    expect(() => updateLectureSchema.parse({})).toThrow();
+    expect(() => updateLectureSchema.parse({ htmlStoragePath: `${lectureId}/lecture.pdf` })).toThrow();
+    expect(() =>
+      updateLectureSchema.parse({
+        publishedStartsAt: "2026-05-13T10:00:00.000Z",
+        publishedEndsAt: "2026-05-13T09:00:00.000Z"
+      })
+    ).toThrow();
+
+    expect(updateLectureSchema.parse({ status: "active", sortOrder: 2 })).toMatchObject({
+      status: "active",
+      sortOrder: 2
+    });
+  });
+
+  it("requires at least one access code update field and validates date ranges", () => {
+    expect(() => updateAccessCodeSchema.parse({})).toThrow();
+    expect(() =>
+      updateAccessCodeSchema.parse({
+        startsAt: "2026-05-13T10:00:00.000Z",
+        endsAt: "2026-05-13T09:00:00.000Z"
+      })
+    ).toThrow();
+
+    expect(updateAccessCodeSchema.parse({ isActive: false })).toEqual({ isActive: false });
+  });
+
+  it("defaults lecture access code link sort order", () => {
+    expect(
+      linkLectureAccessCodeSchema.parse({
+        lectureId,
+        accessCodeId: "550e8400-e29b-41d4-a716-446655440001"
+      })
+    ).toEqual({
+      lectureId,
+      accessCodeId: "550e8400-e29b-41d4-a716-446655440001",
+      sortOrder: 0
+    });
   });
 
   it("validates upload content type by bucket and extension", () => {

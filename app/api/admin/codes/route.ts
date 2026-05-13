@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { requireActiveAdminSession } from "@/src/lib/admin";
 import { createCodeHash } from "@/src/lib/crypto";
 import { createSupabaseServiceClient } from "@/src/lib/supabase";
 import type { Database } from "@/src/types/database";
-import { createAccessCodeSchema } from "@/src/lib/validation";
+import { createAccessCodeSchema, updateAccessCodeSchema } from "@/src/lib/validation";
 
 const accessCodeSelect = "id,name,starts_at,ends_at,is_active,notes,created_at,updated_at";
 type InsertTable<TPayload> = {
@@ -13,6 +14,17 @@ type InsertTable<TPayload> = {
     };
   };
 };
+type UpdateTable<TPayload> = {
+  update(value: TPayload): {
+    eq(column: "id", value: string): {
+      select(columns: string): {
+        maybeSingle(): Promise<{ data: unknown; error: { message: string } | null }>;
+      };
+    };
+  };
+};
+
+const updateAccessCodeRequestSchema = z.object({ id: z.string().uuid() }).passthrough();
 
 export async function GET() {
   if (!(await requireActiveAdminSession())) {
@@ -77,4 +89,56 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ code: data }, { status: 201 });
+}
+
+export async function PATCH(request: NextRequest) {
+  if (!(await requireActiveAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const requestParsed = updateAccessCodeRequestSchema.safeParse(body);
+
+  if (!requestParsed.success) {
+    return NextResponse.json({ error: "Invalid access code update", issues: requestParsed.error.issues }, { status: 400 });
+  }
+
+  const { id, ...rawUpdate } = requestParsed.data;
+  const parsed = updateAccessCodeSchema.safeParse(rawUpdate);
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid access code update", issues: parsed.error.issues }, { status: 400 });
+  }
+
+  const input = parsed.data;
+  const accessCodeUpdate = {
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.startsAt !== undefined ? { starts_at: input.startsAt } : {}),
+    ...(input.endsAt !== undefined ? { ends_at: input.endsAt } : {}),
+    ...(input.isActive !== undefined ? { is_active: input.isActive } : {}),
+    ...(input.notes !== undefined ? { notes: input.notes } : {})
+  } satisfies Database["public"]["Tables"]["access_codes"]["Update"];
+  const supabase = createSupabaseServiceClient();
+  const accessCodesTable = supabase.from("access_codes") as unknown as UpdateTable<typeof accessCodeUpdate>;
+  const { data, error } = await accessCodesTable
+    .update(accessCodeUpdate)
+    .eq("id", id)
+    .select(accessCodeSelect)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: "Access code not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ code: data });
 }

@@ -131,29 +131,76 @@ export function isHttpUrl(value: string | null | undefined): value is string {
   }
 }
 
+function hasAtLeastOneDefinedValue(value: Record<string, unknown>) {
+  return Object.values(value).some((field) => field !== undefined);
+}
+
+function isEndAfterStart(startsAt: string, endsAt: string) {
+  return new Date(endsAt).getTime() > new Date(startsAt).getTime();
+}
+
+const htmlStoragePathSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((path) => isValidStoragePath("lecture-html", path), {
+    message: "htmlStoragePath must be a safe lecture-html path ending in .html"
+  });
+
+const thumbnailStoragePathSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((path) => isValidStoragePath("lecture-images", path), {
+    message: "thumbnailStoragePath must be a safe lecture-images path"
+  });
+
 export const createLectureSchema = z.object({
   title: z.string().trim().min(1).max(160),
   description: z.string().trim().max(1000).default(""),
   status: lectureStatusSchema.default("draft"),
-  htmlStoragePath: z
-    .string()
-    .trim()
-    .min(1)
-    .refine((path) => isValidStoragePath("lecture-html", path), {
-      message: "htmlStoragePath must be a safe lecture-html path ending in .html"
-    })
-    .optional(),
-  thumbnailStoragePath: z
-    .string()
-    .trim()
-    .min(1)
-    .refine((path) => isValidStoragePath("lecture-images", path), {
-      message: "thumbnailStoragePath must be a safe lecture-images path"
-    })
-    .optional(),
+  htmlStoragePath: htmlStoragePathSchema.optional(),
+  thumbnailStoragePath: thumbnailStoragePathSchema.optional(),
   usesDefaultHero: z.boolean().default(true),
+  publishedStartsAt: z.string().datetime().optional(),
+  publishedEndsAt: z.string().datetime().optional(),
   sortOrder: z.number().int().min(0).default(0)
-});
+}).refine(
+  (value) =>
+    !value.publishedStartsAt ||
+    !value.publishedEndsAt ||
+    isEndAfterStart(value.publishedStartsAt, value.publishedEndsAt),
+  {
+    path: ["publishedEndsAt"],
+    message: "publishedEndsAt must be after publishedStartsAt"
+  }
+);
+
+export const updateLectureSchema = z
+  .object({
+    title: z.string().trim().min(1).max(160).optional(),
+    description: z.string().trim().max(1000).optional(),
+    status: lectureStatusSchema.optional(),
+    htmlStoragePath: htmlStoragePathSchema.optional(),
+    thumbnailStoragePath: thumbnailStoragePathSchema.optional(),
+    usesDefaultHero: z.boolean().optional(),
+    sortOrder: z.number().int().min(0).optional(),
+    publishedStartsAt: z.string().datetime().optional(),
+    publishedEndsAt: z.string().datetime().optional()
+  })
+  .refine(hasAtLeastOneDefinedValue, {
+    message: "At least one lecture field is required"
+  })
+  .refine(
+    (value) =>
+      !value.publishedStartsAt ||
+      !value.publishedEndsAt ||
+      isEndAfterStart(value.publishedStartsAt, value.publishedEndsAt),
+    {
+      path: ["publishedEndsAt"],
+      message: "publishedEndsAt must be after publishedStartsAt"
+    }
+  );
 
 export const createAccessCodeSchema = z
   .object({
@@ -168,6 +215,28 @@ export const createAccessCodeSchema = z
     path: ["endsAt"],
     message: "endsAt must be after startsAt"
   });
+
+export const updateAccessCodeSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    startsAt: z.string().datetime().optional(),
+    endsAt: z.string().datetime().optional(),
+    isActive: z.boolean().optional(),
+    notes: z.string().trim().max(500).optional()
+  })
+  .refine(hasAtLeastOneDefinedValue, {
+    message: "At least one access code field is required"
+  })
+  .refine((value) => !value.startsAt || !value.endsAt || isEndAfterStart(value.startsAt, value.endsAt), {
+    path: ["endsAt"],
+    message: "endsAt must be after startsAt"
+  });
+
+export const linkLectureAccessCodeSchema = z.object({
+  lectureId: z.string().uuid(),
+  accessCodeId: z.string().uuid(),
+  sortOrder: z.number().int().min(0).default(0)
+});
 
 export const artifactSchema = z
   .object({
