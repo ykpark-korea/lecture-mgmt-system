@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #172033;
+  background: #f8fbff;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    linear-gradient(135deg, rgba(141, 223, 210, 0.24), transparent 34%),
+    linear-gradient(225deg, rgba(79, 143, 207, 0.16), transparent 38%),
+    #f8fbff;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
