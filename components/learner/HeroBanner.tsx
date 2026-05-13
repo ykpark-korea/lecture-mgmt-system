@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 
 type HeroBannerProps = {
   title?: string;
@@ -12,16 +13,33 @@ export default function HeroBanner({
   actions
 }: HeroBannerProps) {
   return (
-    <section className="overflow-hidden rounded-lg border border-cool-mist bg-white/86 shadow-soft">
-      <div className="relative px-6 py-8 sm:px-8 lg:px-10">
-        <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-[radial-gradient(circle_at_70%_35%,rgba(141,223,210,0.48),transparent_34%),linear-gradient(135deg,rgba(79,143,207,0.18),transparent_58%)] lg:block" />
-        <div className="relative max-w-2xl">
-          <p className="text-sm font-semibold text-hanwha-orange">Hanwha Lecture Portal</p>
-          <h1 className="mt-3 text-3xl font-bold tracking-normal text-cool-ink sm:text-4xl">
-            {title}
-          </h1>
-          <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base">{description}</p>
-          {actions ? <div className="mt-6 flex flex-wrap items-center gap-3">{actions}</div> : null}
+    <section className="overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-soft ring-1 ring-cool-mist/70 backdrop-blur">
+      <div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+        <div className="relative px-6 py-7 sm:px-8 sm:py-8 lg:px-10">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(232,247,252,0.82),rgba(255,255,255,0.34)_54%,rgba(141,223,210,0.18))]" />
+          <div className="relative max-w-2xl">
+            <p className="text-sm font-semibold text-cool-blue">Hanwha Lecture Portal</p>
+            <h1 className="mt-3 text-2xl font-bold tracking-normal text-cool-ink sm:text-3xl">
+              {title}
+            </h1>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
+              {description}
+            </p>
+            {actions ? (
+              <div className="mt-6 flex flex-wrap items-center gap-3">{actions}</div>
+            ) : null}
+          </div>
+        </div>
+        <div className="relative min-h-40 border-t border-cool-mist/70 bg-cool-ice sm:min-h-48 lg:min-h-full lg:border-l lg:border-t-0">
+          <Image
+            src="/hero-wide.png"
+            alt="시원한 여름 톤의 한화 강의 포털 학습 공간 이미지"
+            fill
+            priority
+            sizes="(min-width: 1024px) 38rem, 100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/68 via-white/10 to-transparent lg:from-white/35" />
         </div>
       </div>
     </section>

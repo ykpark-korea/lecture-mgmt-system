@@ -20,9 +20,11 @@ body {
 body {
   margin: 0;
   background:
-    linear-gradient(135deg, rgba(141, 223, 210, 0.24), transparent 34%),
-    linear-gradient(225deg, rgba(79, 143, 207, 0.16), transparent 38%),
+    radial-gradient(circle at 12% 10%, rgba(141, 223, 210, 0.26), transparent 28rem),
+    radial-gradient(circle at 86% 8%, rgba(79, 143, 207, 0.14), transparent 30rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.88) 34%, rgba(232, 247, 252, 0.54)),
     #f8fbff;
+  color: #172033;
 }
 
 button,
@@ -30,4 +32,9 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+::selection {
+  background: rgba(141, 223, 210, 0.48);
+  color: #172033;
 }
