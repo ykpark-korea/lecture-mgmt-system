@@ -33,4 +33,21 @@ Run the initial schema before deploying:
 supabase/migrations/001_initial_schema.sql
 ```
 
+Bootstrap the first active admin code before opening the admin console. Admin code creation requires an existing admin session, so a fresh deployment needs one direct insert.
+
+Generate the hash with the same format as `src/lib/crypto.ts`, using the production `SESSION_SECRET` and the first admin code:
+
+```bash
+SESSION_SECRET='replace-with-production-secret' ADMIN_CODE='replace-with-admin-code' node -e "const { createHash } = require('node:crypto'); console.log(createHash('sha256').update(process.env.SESSION_SECRET + ':' + process.env.ADMIN_CODE.trim()).digest('hex'))"
+```
+
+Insert the generated hash in the Supabase SQL editor:
+
+```sql
+insert into admin_codes (name, code_hash, expires_at, is_active)
+values ('Initial Admin', 'paste-generated-hash-here', now() + interval '30 days', true);
+```
+
+`supabase/seed.sql` is documentation/sample seed material with placeholder hashes. Do not deploy those placeholder values.
+
 Row Level Security is enabled in the schema. Server routes use the Supabase service role key for privileged operations, so keep that key restricted to trusted server-side environments only.
