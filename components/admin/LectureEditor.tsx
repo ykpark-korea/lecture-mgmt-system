@@ -100,7 +100,9 @@ export function LectureEditor() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         bucket: "lecture-html",
-        fileName: htmlFile.name
+        ownerId: selectedLecture?.id ?? crypto.randomUUID(),
+        fileName: htmlFile.name,
+        contentType: htmlFile.type || "text/html"
       })
     });
     const uploadData = await response.json();
@@ -109,9 +111,9 @@ export function LectureEditor() {
       throw new Error(uploadData.error ?? "HTML 업로드 URL 발급에 실패했습니다.");
     }
 
-    const uploadResponse = await fetch(uploadData.signedUrl, {
+    const uploadResponse = await fetch(uploadData.upload.signedUrl, {
       method: "PUT",
-      headers: { "Content-Type": htmlFile.type || "text/html" },
+      headers: { "Content-Type": uploadData.upload.contentType },
       body: htmlFile
     });
 

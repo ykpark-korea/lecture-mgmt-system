@@ -91,7 +91,9 @@ export function ArtifactEditor() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         bucket: "lecture-artifacts",
-        fileName: file.name
+        ownerId: form.lectureId,
+        fileName: file.name,
+        contentType: file.type || "application/octet-stream"
       })
     });
     const uploadData = await response.json();
@@ -100,9 +102,9 @@ export function ArtifactEditor() {
       throw new Error(uploadData.error ?? "파일 업로드 URL 발급에 실패했습니다.");
     }
 
-    const uploadResponse = await fetch(uploadData.signedUrl, {
+    const uploadResponse = await fetch(uploadData.upload.signedUrl, {
       method: "PUT",
-      headers: { "Content-Type": file.type || "application/octet-stream" },
+      headers: { "Content-Type": uploadData.upload.contentType },
       body: file
     });
 

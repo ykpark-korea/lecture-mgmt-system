@@ -82,4 +82,44 @@ describe("admin editors", () => {
       url: "https://example.com"
     });
   });
+
+  it("requests an upload URL with the selected lecture as owner for file artifacts", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ lectures: [lecture] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ artifacts: [] }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          path: `${lecture.id}/practice.pdf`,
+          upload: {
+            signedUrl: "https://upload.example.com",
+            contentType: "application/pdf"
+          }
+        })
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ artifact: { id: "artifact-2", title: "실습 파일" } }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ArtifactEditor />);
+
+    fireEvent.change(await screen.findByLabelText("강좌"), { target: { value: lecture.id } });
+    fireEvent.change(screen.getByLabelText("자료명"), { target: { value: "실습 파일" } });
+    fireEvent.change(screen.getByLabelText("파일"), {
+      target: {
+        files: [new File(["pdf"], "practice.pdf", { type: "application/pdf" })]
+      }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "자료 등록" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/admin/upload-url", expect.objectContaining({
+      method: "POST"
+    })));
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toMatchObject({
+      bucket: "lecture-artifacts",
+      ownerId: lecture.id,
+      fileName: "practice.pdf",
+      contentType: "application/pdf"
+    });
+  });
 });
