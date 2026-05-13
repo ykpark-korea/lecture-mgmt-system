@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Layers3 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import LectureWorkspace from "@/components/learner/LectureWorkspace";
 import { listActiveArtifactsForLecture } from "@/src/lib/artifacts";
@@ -40,10 +40,6 @@ export default async function LecturePage({ params }: LecturePageProps) {
                   <ArrowLeft aria-hidden="true" size={16} />
                   목록으로
                 </Link>
-                <p className="inline-flex items-center gap-1.5 text-sm font-bold text-hanwha-orange">
-                  <Layers3 aria-hidden="true" size={16} />
-                  Hanwha Lecture Workspace
-                </p>
             </div>
             <div className="min-w-0 lg:border-l lg:border-cool-mist lg:pl-4">
               <h1 className="truncate text-xl font-black tracking-normal text-cool-ink sm:text-2xl">
