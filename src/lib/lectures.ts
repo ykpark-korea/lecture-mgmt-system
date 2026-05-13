@@ -26,14 +26,15 @@ export function isLectureVisibleForCode(
     return false;
   }
 
-  if (!lecture.published_starts_at || !lecture.published_ends_at) {
+  if (lecture.published_starts_at && new Date(lecture.published_starts_at) > now) {
     return false;
   }
 
-  const startsAt = new Date(lecture.published_starts_at);
-  const endsAt = new Date(lecture.published_ends_at);
+  if (lecture.published_ends_at && new Date(lecture.published_ends_at) < now) {
+    return false;
+  }
 
-  return startsAt <= now && endsAt >= now;
+  return true;
 }
 
 export function isAccessCodeUsableForLearner(

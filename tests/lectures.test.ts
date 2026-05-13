@@ -35,6 +35,30 @@ describe("lectures", () => {
     expect(isLectureVisibleForCode(lecture(), now)).toBe(true);
   });
 
+  it("allows active lectures without a publish window", () => {
+    expect(
+      isLectureVisibleForCode(
+        lecture({
+          published_starts_at: null,
+          published_ends_at: null
+        }),
+        now
+      )
+    ).toBe(true);
+  });
+
+  it("allows active lectures with only a started-at publish boundary", () => {
+    expect(
+      isLectureVisibleForCode(
+        lecture({
+          published_starts_at: "2026-05-13T00:00:00.000Z",
+          published_ends_at: null
+        }),
+        now
+      )
+    ).toBe(true);
+  });
+
   it("blocks inactive lectures", () => {
     expect(isLectureVisibleForCode(lecture({ status: "inactive" }), now)).toBe(false);
   });
