@@ -58,11 +58,16 @@ export async function POST(request: NextRequest) {
   }
 
   const input = parsed.data;
+  const materialStoragePath = input.materialStoragePath ?? input.htmlStoragePath ?? null;
+  const materialType = input.materialType ?? (input.htmlStoragePath ? "html" : "html");
   const lecture = {
     title: input.title,
     description: input.description,
     status: input.status,
-    html_storage_path: input.htmlStoragePath ?? null,
+    html_storage_path: materialType === "html" ? materialStoragePath : null,
+    material_type: materialType,
+    material_storage_path: materialStoragePath,
+    display_pdf_storage_path: input.displayPdfStoragePath ?? null,
     thumbnail_storage_path: input.thumbnailStoragePath ?? null,
     uses_default_hero: input.usesDefaultHero,
     published_starts_at: input.publishedStartsAt ?? null,
@@ -109,11 +114,22 @@ export async function PATCH(request: NextRequest) {
   }
 
   const input = parsed.data;
+  const materialType = input.materialType;
+  const materialStoragePath = input.materialStoragePath;
+  const nextHtmlStoragePath =
+    (materialType ?? (input.htmlStoragePath ? "html" : undefined)) === "html"
+      ? materialStoragePath ?? input.htmlStoragePath ?? null
+      : null;
   const lectureUpdate = {
     ...(input.title !== undefined ? { title: input.title } : {}),
     ...(input.description !== undefined ? { description: input.description } : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
-    ...(input.htmlStoragePath !== undefined ? { html_storage_path: input.htmlStoragePath } : {}),
+    ...(materialType !== undefined ? { material_type: materialType } : {}),
+    ...(materialStoragePath !== undefined ? { material_storage_path: materialStoragePath } : {}),
+    ...(input.displayPdfStoragePath !== undefined ? { display_pdf_storage_path: input.displayPdfStoragePath } : {}),
+    ...(input.htmlStoragePath !== undefined || materialStoragePath !== undefined || materialType !== undefined
+      ? { html_storage_path: nextHtmlStoragePath }
+      : {}),
     ...(input.thumbnailStoragePath !== undefined ? { thumbnail_storage_path: input.thumbnailStoragePath } : {}),
     ...(input.usesDefaultHero !== undefined ? { uses_default_hero: input.usesDefaultHero } : {}),
     ...(input.sortOrder !== undefined ? { sort_order: input.sortOrder } : {}),

@@ -1,4 +1,5 @@
 export type LectureStatus = "draft" | "active" | "inactive";
+export type LectureMaterialType = "html" | "pdf" | "ppt" | "pptx";
 export type ArtifactType = "file" | "link";
 export type ArtifactCategory = "practice" | "reference" | "external" | "preparation";
 
@@ -30,6 +31,9 @@ export interface Lecture {
   description: string;
   status: LectureStatus;
   html_storage_path: string | null;
+  material_type: LectureMaterialType;
+  material_storage_path: string | null;
+  display_pdf_storage_path: string | null;
   thumbnail_storage_path: string | null;
   uses_default_hero: boolean;
   published_starts_at: string | null;
@@ -94,6 +98,9 @@ type LectureInsert = Omit<
   | "description"
   | "status"
   | "html_storage_path"
+  | "material_type"
+  | "material_storage_path"
+  | "display_pdf_storage_path"
   | "thumbnail_storage_path"
   | "uses_default_hero"
   | "published_starts_at"
@@ -106,6 +113,9 @@ type LectureInsert = Omit<
   description?: string;
   status?: LectureStatus;
   html_storage_path?: string | null;
+  material_type?: LectureMaterialType;
+  material_storage_path?: string | null;
+  display_pdf_storage_path?: string | null;
   thumbnail_storage_path?: string | null;
   uses_default_hero?: boolean;
   published_starts_at?: string | null;

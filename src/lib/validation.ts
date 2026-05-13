@@ -1,10 +1,12 @@
 import { z } from "zod";
 import type { StorageBucket } from "@/src/lib/storage";
+import { detectLectureMaterialType, lectureMaterialTypes } from "@/src/lib/materials";
 
 export const learnerCodeSchema = z.string().trim().min(3).max(64).regex(/^[A-Za-z0-9_-]+$/);
 export const adminCodeSchema = learnerCodeSchema;
 
 export const lectureStatusSchema = z.enum(["draft", "active", "inactive"]);
+export const lectureMaterialTypeSchema = z.enum(lectureMaterialTypes);
 export const artifactTypeSchema = z.enum(["file", "link"]);
 export const artifactCategorySchema = z.enum(["practice", "reference", "external", "preparation"]);
 export const httpUrlSchema = z.string().url().refine(isHttpUrl, {
@@ -12,6 +14,7 @@ export const httpUrlSchema = z.string().url().refine(isHttpUrl, {
 });
 
 export const allowedHtmlExtensions = [".html"] as const;
+export const allowedLectureMaterialExtensions = [".html", ".pdf", ".ppt", ".pptx"] as const;
 export const allowedArtifactExtensions = [
   ".pdf",
   ".zip",
@@ -37,6 +40,13 @@ export const allowedArtifactContentTypes = [
   "image/jpeg",
   "image/webp"
 ] as const;
+export const allowedLectureMaterialContentTypes = [
+  "text/html",
+  "application/pdf",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/octet-stream"
+] as const;
 
 function hasAllowedExtension(fileName: string, extensions: readonly string[]) {
   const lower = fileName.toLowerCase();
@@ -45,6 +55,10 @@ function hasAllowedExtension(fileName: string, extensions: readonly string[]) {
 
 export function isAllowedHtmlFile(fileName: string) {
   return hasAllowedExtension(fileName, allowedHtmlExtensions);
+}
+
+export function isAllowedLectureMaterialFile(fileName: string) {
+  return hasAllowedExtension(fileName, allowedLectureMaterialExtensions);
 }
 
 export function isAllowedArtifactFile(fileName: string) {
@@ -75,7 +89,7 @@ export function isValidStoragePath(bucket: StorageBucket, path: string) {
   }
 
   if (bucket === "lecture-html") {
-    return isAllowedHtmlFile(fileName);
+    return isAllowedLectureMaterialFile(fileName);
   }
 
   if (bucket === "lecture-images") {
@@ -89,7 +103,10 @@ export function isAllowedUploadContentType(bucket: StorageBucket, fileName: stri
   const normalizedContentType = contentType.trim().toLowerCase();
 
   if (bucket === "lecture-html") {
-    return isAllowedHtmlFile(fileName) && ["text/html", "application/octet-stream"].includes(normalizedContentType);
+    return (
+      isAllowedLectureMaterialFile(fileName) &&
+      allowedLectureMaterialContentTypes.includes(normalizedContentType as never)
+    );
   }
 
   if (bucket === "lecture-images") {
@@ -143,8 +160,24 @@ const htmlStoragePathSchema = z
   .string()
   .trim()
   .min(1)
-  .refine((path) => isValidStoragePath("lecture-html", path), {
+  .refine((path) => isValidStoragePath("lecture-html", path) && isAllowedHtmlFile(path.split("/")[1] ?? ""), {
     message: "htmlStoragePath must be a safe lecture-html path ending in .html"
+  });
+
+const lectureMaterialStoragePathSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((path) => isValidStoragePath("lecture-html", path), {
+    message: "materialStoragePath must be a safe lecture-html path ending in .html, .pdf, .ppt, or .pptx"
+  });
+
+const displayPdfStoragePathSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((path) => isValidStoragePath("lecture-html", path) && path.toLowerCase().endsWith(".pdf"), {
+    message: "displayPdfStoragePath must be a safe lecture-html path ending in .pdf"
   });
 
 const thumbnailStoragePathSchema = z
@@ -159,12 +192,17 @@ export const createLectureSchema = z.object({
   title: z.string().trim().min(1).max(160),
   description: z.string().trim().max(1000).default(""),
   status: lectureStatusSchema.default("draft"),
+  materialType: lectureMaterialTypeSchema.default("html"),
+  materialStoragePath: lectureMaterialStoragePathSchema.optional(),
+  displayPdfStoragePath: displayPdfStoragePathSchema.optional(),
   htmlStoragePath: htmlStoragePathSchema.optional(),
   thumbnailStoragePath: thumbnailStoragePathSchema.optional(),
   usesDefaultHero: z.boolean().default(true),
   publishedStartsAt: z.string().datetime().optional(),
   publishedEndsAt: z.string().datetime().optional(),
   sortOrder: z.number().int().min(0).default(0)
+}).superRefine((value, context) => {
+  validateLectureMaterialFields(value, context);
 }).refine(
   (value) =>
     !value.publishedStartsAt ||
@@ -181,6 +219,9 @@ export const updateLectureSchema = z
     title: z.string().trim().min(1).max(160).optional(),
     description: z.string().trim().max(1000).optional(),
     status: lectureStatusSchema.optional(),
+    materialType: lectureMaterialTypeSchema.optional(),
+    materialStoragePath: lectureMaterialStoragePathSchema.optional(),
+    displayPdfStoragePath: displayPdfStoragePathSchema.optional(),
     htmlStoragePath: htmlStoragePathSchema.optional(),
     thumbnailStoragePath: thumbnailStoragePathSchema.optional(),
     usesDefaultHero: z.boolean().optional(),
@@ -190,6 +231,9 @@ export const updateLectureSchema = z
   })
   .refine(hasAtLeastOneDefinedValue, {
     message: "At least one lecture field is required"
+  })
+  .superRefine((value, context) => {
+    validateLectureMaterialFields(value, context);
   })
   .refine(
     (value) =>
@@ -201,6 +245,31 @@ export const updateLectureSchema = z
       message: "publishedEndsAt must be after publishedStartsAt"
     }
   );
+
+function validateLectureMaterialFields(
+  value: { materialType?: string; materialStoragePath?: string; htmlStoragePath?: string; displayPdfStoragePath?: string },
+  context: z.RefinementCtx
+) {
+  if (value.materialStoragePath && value.materialType) {
+    const detectedType = detectLectureMaterialType(value.materialStoragePath);
+
+    if (detectedType !== value.materialType) {
+      context.addIssue({
+        code: "custom",
+        path: ["materialStoragePath"],
+        message: "materialStoragePath extension must match materialType"
+      });
+    }
+  }
+
+  if (value.htmlStoragePath && value.materialType && value.materialType !== "html") {
+    context.addIssue({
+      code: "custom",
+      path: ["htmlStoragePath"],
+      message: "htmlStoragePath can only be used with HTML materials"
+    });
+  }
+}
 
 export const createAccessCodeSchema = z
   .object({

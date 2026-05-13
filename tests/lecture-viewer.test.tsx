@@ -6,7 +6,7 @@ import LectureViewer from "@/components/learner/LectureViewer";
 
 describe("LectureViewer", () => {
   it("renders the embedded lecture with a new-tab control", () => {
-    render(<LectureViewer lectureId="lecture-1" title="HPMP" />);
+    render(<LectureViewer lectureId="lecture-1" title="HPMP" materialType="html" hasDisplayPdf={false} />);
 
     expect(screen.getByText("강의 자료")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "전체 보기" })).not.toBeInTheDocument();

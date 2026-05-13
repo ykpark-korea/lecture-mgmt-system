@@ -6,7 +6,15 @@ import LectureWorkspace from "@/components/learner/LectureWorkspace";
 
 describe("LectureWorkspace", () => {
   it("collapses and expands the learning materials panel", () => {
-    render(<LectureWorkspace lectureId="lecture-1" title="HPMP" artifacts={[]} />);
+    render(
+      <LectureWorkspace
+        lectureId="lecture-1"
+        title="HPMP"
+        materialType="html"
+        hasDisplayPdf={false}
+        artifacts={[]}
+      />
+    );
 
     expect(screen.getByText("자료실")).toBeInTheDocument();
     fireEvent.click(screen.getByTitle("학습자료 접기"));

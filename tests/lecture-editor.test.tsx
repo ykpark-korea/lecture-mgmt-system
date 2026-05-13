@@ -24,6 +24,9 @@ describe("LectureEditor", () => {
             description: "실습용 강좌",
             status: "draft",
             html_storage_path: null,
+            material_type: "html",
+            material_storage_path: null,
+            display_pdf_storage_path: null,
             thumbnail_storage_path: null,
             uses_default_hero: true,
             published_starts_at: null,
@@ -55,7 +58,7 @@ describe("LectureEditor", () => {
     expect(await screen.findByText("AI 실습 과정")).toBeInTheDocument();
   });
 
-  it("requests an upload URL with owner id and content type when an HTML file is selected", async () => {
+  it("requests an upload URL with owner id and content type when a lecture material file is selected", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
@@ -84,6 +87,9 @@ describe("LectureEditor", () => {
             description: "",
             status: "draft",
             html_storage_path: "33333333-3333-4333-8333-333333333333/lecture.html",
+            material_type: "html",
+            material_storage_path: "33333333-3333-4333-8333-333333333333/lecture.html",
+            display_pdf_storage_path: null,
             thumbnail_storage_path: null,
             uses_default_hero: true,
             published_starts_at: null,
@@ -100,7 +106,7 @@ describe("LectureEditor", () => {
     render(<LectureEditor />);
 
     fireEvent.change(screen.getByLabelText("강의명"), { target: { value: "AI 실습 과정" } });
-    fireEvent.change(screen.getByLabelText("HTML 강의자료"), {
+    fireEvent.change(screen.getByLabelText("강의자료"), {
       target: {
         files: [new File(["<html></html>"], "lecture.html", { type: "text/html" })]
       }

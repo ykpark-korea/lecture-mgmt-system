@@ -52,7 +52,13 @@ export default async function LecturePage({ params }: LecturePageProps) {
           </div>
         </header>
 
-        <LectureWorkspace lectureId={lecture.id} title={lecture.title} artifacts={artifacts} />
+        <LectureWorkspace
+          lectureId={lecture.id}
+          title={lecture.title}
+          materialType={lecture.material_type ?? "html"}
+          hasDisplayPdf={Boolean(lecture.display_pdf_storage_path)}
+          artifacts={artifacts}
+        />
       </div>
     </main>
   );

@@ -6,6 +6,7 @@ import {
   isAllowedArtifactFile,
   isAllowedHtmlFile,
   isAllowedImageFile,
+  isAllowedLectureMaterialFile,
   isAllowedUploadContentType,
   isValidStoragePath,
   linkLectureAccessCodeSchema,
@@ -25,9 +26,17 @@ describe("validation", () => {
     expect(() => learnerCodeSchema.parse("")).toThrow();
   });
 
-  it("allows only html lecture uploads", () => {
+  it("keeps legacy html-only validation for htmlStoragePath", () => {
     expect(isAllowedHtmlFile("lecture.html")).toBe(true);
     expect(isAllowedHtmlFile("lecture.pdf")).toBe(false);
+  });
+
+  it("allows lecture material uploads for html, pdf, ppt, and pptx", () => {
+    expect(isAllowedLectureMaterialFile("lecture.html")).toBe(true);
+    expect(isAllowedLectureMaterialFile("lecture.pdf")).toBe(true);
+    expect(isAllowedLectureMaterialFile("lecture.ppt")).toBe(true);
+    expect(isAllowedLectureMaterialFile("lecture.pptx")).toBe(true);
+    expect(isAllowedLectureMaterialFile("lecture.exe")).toBe(false);
   });
 
   it("allows artifact file extensions from the MVP allowlist", () => {
@@ -54,9 +63,10 @@ describe("validation", () => {
 
   it("validates bucket-specific persisted storage paths", () => {
     expect(isValidStoragePath("lecture-html", `${lectureId}/lecture.html`)).toBe(true);
+    expect(isValidStoragePath("lecture-html", `${lectureId}/lecture.pdf`)).toBe(true);
+    expect(isValidStoragePath("lecture-html", `${lectureId}/lecture.pptx`)).toBe(true);
     expect(isValidStoragePath("lecture-html", `/lecture.html`)).toBe(false);
     expect(isValidStoragePath("lecture-html", `${lectureId}/nested/lecture.html`)).toBe(false);
-    expect(isValidStoragePath("lecture-html", `${lectureId}/lecture.pdf`)).toBe(false);
     expect(isValidStoragePath("lecture-images", `${lectureId}/hero.webp`)).toBe(true);
     expect(isValidStoragePath("lecture-artifacts", `${lectureId}/practice.zip`)).toBe(true);
     expect(isValidStoragePath("lecture-artifacts", `${lectureId}/../practice.zip`)).toBe(false);
@@ -142,7 +152,9 @@ describe("validation", () => {
 
   it("validates upload content type by bucket and extension", () => {
     expect(isAllowedUploadContentType("lecture-html", "lecture.html", "text/html")).toBe(true);
-    expect(isAllowedUploadContentType("lecture-html", "lecture.html", "application/pdf")).toBe(false);
+    expect(isAllowedUploadContentType("lecture-html", "lecture.pdf", "application/pdf")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-html", "lecture.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-html", "lecture.exe", "application/octet-stream")).toBe(false);
     expect(isAllowedUploadContentType("lecture-images", "hero.webp", "image/webp")).toBe(true);
     expect(isAllowedUploadContentType("lecture-images", "hero.png", "image/png")).toBe(true);
     expect(isAllowedUploadContentType("lecture-images", "hero.jpg", "image/jpeg")).toBe(true);

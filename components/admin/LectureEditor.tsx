@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, FileUp, Loader2, Plus, RefreshCw, Save } from "lucide-react";
+import { detectLectureMaterialType, getLectureMaterialTypeLabel } from "@/src/lib/materials";
+import type { LectureMaterialType } from "@/src/types/database";
 
 type LectureStatus = "draft" | "active" | "inactive";
 
@@ -11,6 +13,9 @@ type Lecture = {
   description: string;
   status: LectureStatus;
   html_storage_path: string | null;
+  material_type: LectureMaterialType;
+  material_storage_path: string | null;
+  display_pdf_storage_path: string | null;
   thumbnail_storage_path: string | null;
   uses_default_hero: boolean;
   published_starts_at: string | null;
@@ -25,14 +30,17 @@ const emptyForm = {
   description: "",
   status: "draft" as LectureStatus,
   sortOrder: "0",
-  htmlStoragePath: ""
+  materialType: "html" as LectureMaterialType,
+  materialStoragePath: "",
+  displayPdfStoragePath: ""
 };
 
 export function LectureEditor() {
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [selectedLectureId, setSelectedLectureId] = useState("");
   const [form, setForm] = useState(emptyForm);
-  const [htmlFile, setHtmlFile] = useState<File | null>(null);
+  const [materialFile, setMaterialFile] = useState<File | null>(null);
+  const [displayPdfFile, setDisplayPdfFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -77,22 +85,40 @@ export function LectureEditor() {
       description: lecture.description,
       status: lecture.status,
       sortOrder: String(lecture.sort_order),
-      htmlStoragePath: lecture.html_storage_path ?? ""
+      materialType: lecture.material_type ?? "html",
+      materialStoragePath: lecture.material_storage_path ?? lecture.html_storage_path ?? "",
+      displayPdfStoragePath: lecture.display_pdf_storage_path ?? ""
     });
-    setHtmlFile(null);
+    setMaterialFile(null);
+    setDisplayPdfFile(null);
     setMessage("");
   }
 
   function resetForm() {
     setSelectedLectureId("");
     setForm(emptyForm);
-    setHtmlFile(null);
+    setMaterialFile(null);
+    setDisplayPdfFile(null);
     setMessage("");
   }
 
-  async function uploadHtmlIfNeeded() {
-    if (!htmlFile) {
-      return form.htmlStoragePath.trim() || undefined;
+  function selectMaterialFile(file: File | null) {
+    setMaterialFile(file);
+
+    if (!file) {
+      return;
+    }
+
+    const detectedType = detectLectureMaterialType(file.name);
+
+    if (detectedType) {
+      updateForm("materialType", detectedType);
+    }
+  }
+
+  async function uploadLectureFileIfNeeded(file: File | null, fallbackPath: string, fallbackContentType: string, ownerId: string) {
+    if (!file) {
+      return fallbackPath.trim() || undefined;
     }
 
     const response = await fetch("/api/admin/upload-url", {
@@ -100,25 +126,25 @@ export function LectureEditor() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         bucket: "lecture-html",
-        ownerId: selectedLecture?.id ?? crypto.randomUUID(),
-        fileName: htmlFile.name,
-        contentType: htmlFile.type || "text/html"
+        ownerId,
+        fileName: file.name,
+        contentType: file.type || fallbackContentType
       })
     });
     const uploadData = await response.json();
 
     if (!response.ok) {
-      throw new Error(uploadData.error ?? "HTML 업로드 URL 발급에 실패했습니다.");
+      throw new Error(uploadData.error ?? "강의자료 업로드 URL 발급에 실패했습니다.");
     }
 
     const uploadResponse = await fetch(uploadData.upload.signedUrl, {
       method: "PUT",
       headers: { "Content-Type": uploadData.upload.contentType },
-      body: htmlFile
+      body: file
     });
 
     if (!uploadResponse.ok) {
-      throw new Error("HTML 파일 업로드에 실패했습니다.");
+      throw new Error("강의자료 파일 업로드에 실패했습니다.");
     }
 
     return uploadData.path as string;
@@ -147,14 +173,29 @@ export function LectureEditor() {
     setMessage("");
 
     try {
-      const htmlStoragePath = await uploadHtmlIfNeeded();
+      const uploadOwnerId = selectedLecture?.id ?? crypto.randomUUID();
+      const materialStoragePath = await uploadLectureFileIfNeeded(
+        materialFile,
+        form.materialStoragePath,
+        form.materialType === "html" ? "text/html" : "application/octet-stream",
+        uploadOwnerId
+      );
+      const displayPdfStoragePath = await uploadLectureFileIfNeeded(
+        displayPdfFile,
+        form.displayPdfStoragePath,
+        "application/pdf",
+        uploadOwnerId
+      );
       const body = {
         ...(mode === "update" ? { id: selectedLecture?.id } : {}),
         title: form.title,
         description: form.description,
         status: form.status,
         sortOrder: Number.parseInt(form.sortOrder || "0", 10),
-        ...(htmlStoragePath ? { htmlStoragePath } : {})
+        materialType: form.materialType,
+        ...(materialStoragePath ? { materialStoragePath } : {}),
+        ...(form.materialType === "html" && materialStoragePath ? { htmlStoragePath: materialStoragePath } : {}),
+        ...(displayPdfStoragePath ? { displayPdfStoragePath } : {})
       };
       const response = await fetch("/api/admin/lectures", {
         method: mode === "create" ? "POST" : "PATCH",
@@ -188,7 +229,7 @@ export function LectureEditor() {
         <p className="text-sm font-semibold text-cool-blue">Lecture</p>
         <h2 className="mt-2 text-xl font-bold text-cool-ink">강좌 만들기</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          HTML 강의자료를 업로드하고 공개 상태를 바로 관리합니다.
+          HTML, PDF, PPT, PPTX 강의자료를 업로드하고 공개 상태를 바로 관리합니다.
         </p>
       </div>
 
@@ -248,17 +289,47 @@ export function LectureEditor() {
             placeholder="강의 카드와 관리자 목록에 표시할 간단한 설명"
           />
         </label>
-        <label className="text-sm font-semibold text-slate-700" htmlFor="lecture-html-file">
-          HTML 강의자료
+        <label className="text-sm font-semibold text-slate-700" htmlFor="lecture-material-file">
+          강의자료
           <input
-            id="lecture-html-file"
-            name="htmlFile"
+            id="lecture-material-file"
+            name="materialFile"
             type="file"
-            accept=".html,text/html"
-            onChange={(event) => setHtmlFile(event.target.files?.[0] ?? null)}
+            accept=".html,.pdf,.ppt,.pptx,text/html,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            onChange={(event) => selectMaterialFile(event.target.files?.[0] ?? null)}
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cool-ice file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-cool-blue focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
           />
-          {form.htmlStoragePath ? <span className="mt-1 block text-xs font-normal text-slate-500">{form.htmlStoragePath}</span> : null}
+          {form.materialStoragePath ? <span className="mt-1 block text-xs font-normal text-slate-500">{form.materialStoragePath}</span> : null}
+        </label>
+        <label className="text-sm font-semibold text-slate-700" htmlFor="lecture-material-type">
+          자료 유형
+          <select
+            id="lecture-material-type"
+            name="materialType"
+            value={form.materialType}
+            onChange={(event) => updateForm("materialType", event.target.value as LectureMaterialType)}
+            className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
+          >
+            <option value="html">HTML</option>
+            <option value="pdf">PDF</option>
+            <option value="ppt">PPT</option>
+            <option value="pptx">PPTX</option>
+          </select>
+        </label>
+        <label className="text-sm font-semibold text-slate-700 sm:col-span-2" htmlFor="lecture-display-pdf-file">
+          표시용 PDF
+          <input
+            id="lecture-display-pdf-file"
+            name="displayPdfFile"
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={(event) => setDisplayPdfFile(event.target.files?.[0] ?? null)}
+            className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cool-ice file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-cool-blue focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
+          />
+          <span className="mt-1 block text-xs font-normal text-slate-500">
+            PPT/PPTX는 표시용 PDF가 있으면 학습자 화면에서 키보드로 페이지를 넘길 수 있습니다.
+            {form.displayPdfStoragePath ? ` 현재 파일: ${form.displayPdfStoragePath}` : ""}
+          </span>
         </label>
         <label className="text-sm font-semibold text-slate-700" htmlFor="lecture-sort-order">
           정렬 순서
@@ -325,7 +396,8 @@ export function LectureEditor() {
               <span className="flex items-center justify-between gap-3">
                 <span className="text-sm font-bold text-cool-ink">{lecture.title}</span>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
-                  {lecture.html_storage_path ? <FileUp size={14} aria-hidden="true" /> : null}
+                  {lecture.material_storage_path || lecture.html_storage_path ? <FileUp size={14} aria-hidden="true" /> : null}
+                  {getLectureMaterialTypeLabel(lecture.material_type ?? "html")}
                   {lecture.status === "active" ? <CheckCircle2 size={14} className="text-cool-blue" aria-hidden="true" /> : null}
                   {lecture.status}
                 </span>

@@ -4,15 +4,17 @@ import { useState } from "react";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import ArtifactPanel from "@/components/learner/ArtifactPanel";
 import LectureViewer from "@/components/learner/LectureViewer";
-import type { Artifact } from "@/src/types/database";
+import type { Artifact, LectureMaterialType } from "@/src/types/database";
 
 type LectureWorkspaceProps = {
   lectureId: string;
   title: string;
+  materialType: LectureMaterialType;
+  hasDisplayPdf: boolean;
   artifacts: Artifact[];
 };
 
-export default function LectureWorkspace({ lectureId, title, artifacts }: LectureWorkspaceProps) {
+export default function LectureWorkspace({ lectureId, title, materialType, hasDisplayPdf, artifacts }: LectureWorkspaceProps) {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
   return (
@@ -23,7 +25,7 @@ export default function LectureWorkspace({ lectureId, title, artifacts }: Lectur
           : "grid gap-5 xl:grid-cols-[minmax(0,1fr)_370px]"
       }
     >
-      <LectureViewer lectureId={lectureId} title={title} />
+      <LectureViewer lectureId={lectureId} title={title} materialType={materialType} hasDisplayPdf={hasDisplayPdf} />
       <ArtifactPanel
         artifacts={artifacts}
         isCollapsed={isPanelCollapsed}
