@@ -19,7 +19,7 @@ export async function AdminShell({ children }: { children: ReactNode }) {
 
   return (
     <main className="min-h-screen bg-cool-ice text-cool-ink">
-      <header className="border-b border-cool-mist bg-white/92 px-5 py-4 shadow-sm backdrop-blur sm:px-8">
+      <header className="border-b border-cool-mist bg-white/95 px-5 py-4 shadow-sm backdrop-blur sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link className="text-lg font-bold tracking-normal text-cool-ink" href="/admin">
             한화손보 강의 관리자

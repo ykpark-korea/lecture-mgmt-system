@@ -8,7 +8,7 @@ type LectureCardProps = {
 
 export default function LectureCard({ lecture }: LectureCardProps) {
   return (
-    <article className="group flex min-h-64 flex-col rounded-lg border border-white/80 bg-white/92 p-6 shadow-soft ring-1 ring-cool-mist/70 transition hover:-translate-y-0.5 hover:border-cool-blue/35 hover:bg-white hover:shadow-lg">
+    <article className="group flex min-h-64 flex-col rounded-lg border border-white/80 bg-white/95 p-6 shadow-soft ring-1 ring-cool-mist/70 transition hover:-translate-y-0.5 hover:border-cool-blue/35 hover:bg-white hover:shadow-lg">
       <div className="flex items-center justify-between gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-cool-mist text-cool-blue ring-1 ring-white">
           <BookOpen aria-hidden="true" size={22} />
@@ -19,7 +19,7 @@ export default function LectureCard({ lecture }: LectureCardProps) {
         <p className="text-xs font-semibold uppercase tracking-normal text-cool-blue">
           Hanwha Class
         </p>
-        <h2 className="mt-2 text-xl font-bold tracking-normal text-cool-ink transition group-hover:text-cool-blue">
+        <h2 className="mt-2 break-words text-xl font-bold tracking-normal text-cool-ink transition group-hover:text-cool-blue">
           {lecture.title}
         </h2>
         <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">

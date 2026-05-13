@@ -33,7 +33,7 @@ export default function HeroBanner({
         <div className="relative min-h-40 border-t border-cool-mist/70 bg-cool-ice sm:min-h-48 lg:min-h-full lg:border-l lg:border-t-0">
           <Image
             src="/hero-wide.png"
-            alt="시원한 여름 톤의 한화 강의 포털 학습 공간 이미지"
+            alt=""
             fill
             priority
             sizes="(min-width: 1024px) 38rem, 100vw"

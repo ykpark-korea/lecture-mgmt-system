@@ -10,11 +10,11 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-6">
-      <section className="grid w-full max-w-5xl overflow-hidden rounded-lg border border-white/80 bg-white/92 shadow-soft ring-1 ring-cool-mist/70 backdrop-blur lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <section className="grid w-full max-w-5xl overflow-hidden rounded-lg border border-white/80 bg-white/95 shadow-soft ring-1 ring-cool-mist/70 backdrop-blur lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div className="relative order-2 min-h-56 border-t border-cool-mist bg-cool-ice lg:order-1 lg:min-h-[34rem] lg:border-r lg:border-t-0">
           <Image
             src="/hero-full.png"
-            alt="시원한 여름 분위기의 한화 학습 포털 안내 이미지"
+            alt=""
             fill
             priority
             sizes="(min-width: 1024px) 36rem, 100vw"
