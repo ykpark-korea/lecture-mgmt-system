@@ -6,12 +6,13 @@ export function CodeManager() {
       <p className="mt-2 text-sm leading-6 text-slate-600">
         수강 기간과 연결 강의를 지정하는 코드 생성 폼이 이 영역에 확장됩니다.
       </p>
-      <form className="mt-5 grid gap-4 sm:grid-cols-2" aria-label="접속 코드 생성 입력 예시">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2" aria-label="접속 코드 생성 입력 예시" role="group">
         <label className="text-sm font-semibold text-slate-700" htmlFor="code-name">
           코드명
           <input
             id="code-name"
             name="name"
+            readOnly
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
             placeholder="예: 5월 모집인 과정"
           />
@@ -21,6 +22,7 @@ export function CodeManager() {
           <input
             id="code-value"
             name="code"
+            readOnly
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
             placeholder="HANWHA-2026"
           />
@@ -31,6 +33,7 @@ export function CodeManager() {
             id="code-starts-at"
             name="startsAt"
             type="datetime-local"
+            readOnly
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
           />
         </label>
@@ -40,6 +43,7 @@ export function CodeManager() {
             id="code-ends-at"
             name="endsAt"
             type="datetime-local"
+            readOnly
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
           />
         </label>
@@ -48,6 +52,7 @@ export function CodeManager() {
           <textarea
             id="code-notes"
             name="notes"
+            readOnly
             className="mt-2 min-h-20 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
             placeholder="운영자가 확인할 내부 메모"
           />
@@ -60,7 +65,7 @@ export function CodeManager() {
             API 연결 대기
           </button>
         </div>
-      </form>
+      </div>
     </section>
   );
 }

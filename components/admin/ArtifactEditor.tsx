@@ -6,12 +6,13 @@ export function ArtifactEditor() {
       <p className="mt-2 text-sm leading-6 text-slate-600">
         실습 파일, 참고 자료, 외부 링크를 강의별로 등록할 준비 영역입니다.
       </p>
-      <form className="mt-5 grid gap-4 sm:grid-cols-2" aria-label="자료 등록 입력 예시">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2" aria-label="자료 등록 입력 예시" role="group">
         <label className="text-sm font-semibold text-slate-700" htmlFor="artifact-lecture-id">
           강의 ID
           <input
             id="artifact-lecture-id"
             name="lectureId"
+            readOnly
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
             placeholder="lectureId"
           />
@@ -21,6 +22,7 @@ export function ArtifactEditor() {
           <input
             id="artifact-title"
             name="title"
+            readOnly
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
             placeholder="예: 실습 교안"
           />
@@ -30,6 +32,7 @@ export function ArtifactEditor() {
           <select
             id="artifact-type"
             name="type"
+            disabled
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
             defaultValue="file"
           >
@@ -42,6 +45,7 @@ export function ArtifactEditor() {
           <select
             id="artifact-category"
             name="category"
+            disabled
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
             defaultValue="practice"
           >
@@ -56,6 +60,7 @@ export function ArtifactEditor() {
           <input
             id="artifact-target"
             name="urlOrStoragePath"
+            readOnly
             className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
             placeholder="https://... 또는 upload-url path"
           />
@@ -68,7 +73,7 @@ export function ArtifactEditor() {
             API 연결 대기
           </button>
         </div>
-      </form>
+      </div>
     </section>
   );
 }
