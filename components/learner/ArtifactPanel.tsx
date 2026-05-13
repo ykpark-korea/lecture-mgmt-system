@@ -1,5 +1,6 @@
 import { Download, ExternalLink, FileText } from "lucide-react";
 import type { Artifact, ArtifactCategory } from "@/src/types/database";
+import { isHttpUrl } from "@/src/lib/validation";
 
 type ArtifactPanelProps = {
   artifacts: Artifact[];
@@ -53,16 +54,11 @@ export default function ArtifactPanel({ artifacts }: ArtifactPanelProps) {
 
 function ArtifactLink({ artifact }: { artifact: Artifact }) {
   const isFile = artifact.type === "file";
-  const href = isFile ? `/api/artifacts/${artifact.id}/signed-url` : artifact.url ?? "#";
+  const isSafeExternalLink = !isFile && isHttpUrl(artifact.url);
+  const href = isFile ? `/api/artifacts/${artifact.id}/signed-url` : artifact.url ?? undefined;
   const Icon = isFile ? Download : ExternalLink;
-
-  return (
-    <a
-      href={href}
-      target={isFile ? undefined : "_blank"}
-      rel={isFile ? undefined : "noreferrer"}
-      className="group flex items-start gap-3 rounded-md border border-cool-mist bg-cool-ice px-4 py-3 text-sm transition hover:border-cool-blue/50 hover:bg-white"
-    >
+  const content = (
+    <>
       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-cool-blue">
         {isFile ? <FileText aria-hidden="true" size={17} /> : <Icon aria-hidden="true" size={17} />}
       </span>
@@ -79,6 +75,25 @@ function ArtifactLink({ artifact }: { artifact: Artifact }) {
       ) : (
         <ExternalLink aria-hidden="true" className="mt-1 shrink-0 text-slate-400" size={16} />
       )}
+    </>
+  );
+
+  if (!isFile && !isSafeExternalLink) {
+    return (
+      <div className="group flex items-start gap-3 rounded-md border border-cool-mist bg-cool-ice px-4 py-3 text-sm text-slate-500">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target={isFile ? undefined : "_blank"}
+      rel={isFile ? undefined : "noreferrer"}
+      className="group flex items-start gap-3 rounded-md border border-cool-mist bg-cool-ice px-4 py-3 text-sm transition hover:border-cool-blue/50 hover:bg-white"
+    >
+      {content}
     </a>
   );
 }

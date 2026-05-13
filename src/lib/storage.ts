@@ -64,6 +64,48 @@ export async function createSignedDownloadUrl(
   return data.signedUrl;
 }
 
+export async function createPrivateObjectResponse(
+  bucket: StorageBucket,
+  path: string,
+  expiresInSeconds = 30
+): Promise<Response> {
+  const signedUrl = await createSignedDownloadUrl(bucket, path, expiresInSeconds);
+  const upstream = await fetch(signedUrl, { cache: "no-store" });
+  const headers = new Headers();
+
+  setNoStoreHeaders(headers);
+
+  if (!upstream.ok || !upstream.body) {
+    headers.set("content-type", "application/json");
+
+    return new Response(JSON.stringify({ error: "Asset not found" }), {
+      status: upstream.status === 401 || upstream.status === 403 ? 404 : upstream.status,
+      headers
+    });
+  }
+
+  for (const headerName of ["content-type", "content-length", "content-disposition"]) {
+    const headerValue = upstream.headers.get(headerName);
+
+    if (headerValue) {
+      headers.set(headerName, headerValue);
+    }
+  }
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers
+  });
+}
+
+function setNoStoreHeaders(headers: Headers) {
+  headers.set("cache-control", "no-store, max-age=0");
+  headers.set("pragma", "no-cache");
+  headers.set("expires", "0");
+  headers.set("referrer-policy", "no-referrer");
+  headers.set("x-content-type-options", "nosniff");
+}
+
 export async function createSignedUploadUrl(bucket: StorageBucket, path: string): Promise<string> {
   const supabase = createSupabaseServiceClient();
   const { data, error } = await supabase.storage.from(bucket).createSignedUploadUrl(path);

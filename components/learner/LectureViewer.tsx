@@ -13,6 +13,7 @@ export default function LectureViewer({ lectureId, title }: LectureViewerProps) 
         src={`/api/lectures/${lectureId}/signed-url`}
         title={title}
         sandbox="allow-scripts allow-downloads allow-forms allow-popups"
+        referrerPolicy="no-referrer"
         className="h-[70vh] min-h-[520px] w-full bg-white"
       />
     </section>

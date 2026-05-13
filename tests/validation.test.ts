@@ -59,4 +59,28 @@ describe("validation", () => {
       })
     ).toThrow();
   });
+
+  it("rejects link artifacts with non-http urls", () => {
+    expect(() =>
+      artifactSchema.parse({
+        lectureId,
+        type: "link",
+        category: "external",
+        title: "Unsafe link",
+        url: "javascript:alert(1)"
+      })
+    ).toThrow();
+  });
+
+  it("accepts link artifacts with https urls", () => {
+    expect(
+      artifactSchema.parse({
+        lectureId,
+        type: "link",
+        category: "external",
+        title: "Reference",
+        url: "https://example.com/reference"
+      }).url
+    ).toBe("https://example.com/reference");
+  });
 });

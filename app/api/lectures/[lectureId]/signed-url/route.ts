@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { readLearnerSession } from "@/src/lib/cookies";
 import { getAuthorizedLecture } from "@/src/lib/lectures";
-import { createSignedDownloadUrl } from "@/src/lib/storage";
+import { createPrivateObjectResponse } from "@/src/lib/storage";
 
 type RouteContext = {
   params: Promise<{ lectureId: string }>;
@@ -23,7 +23,5 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Lecture not found" }, { status: 404 });
   }
 
-  const signedUrl = await createSignedDownloadUrl("lecture-html", lecture.html_storage_path);
-
-  return NextResponse.redirect(signedUrl);
+  return createPrivateObjectResponse("lecture-html", lecture.html_storage_path);
 }
