@@ -75,3 +75,40 @@ create index access_codes_active_window_idx on access_codes (is_active, starts_a
 create index lectures_status_sort_idx on lectures (status, sort_order);
 create index lecture_access_codes_access_idx on lecture_access_codes (access_code_id, sort_order);
 create index artifacts_lecture_idx on artifacts (lecture_id, is_active, sort_order);
+
+create function set_updated_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger set_access_codes_updated_at
+before update on access_codes
+for each row
+execute function set_updated_at();
+
+create trigger set_admin_codes_updated_at
+before update on admin_codes
+for each row
+execute function set_updated_at();
+
+create trigger set_lectures_updated_at
+before update on lectures
+for each row
+execute function set_updated_at();
+
+create trigger set_artifacts_updated_at
+before update on artifacts
+for each row
+execute function set_updated_at();
+
+alter table access_codes enable row level security;
+alter table admin_codes enable row level security;
+alter table lectures enable row level security;
+alter table lecture_access_codes enable row level security;
+alter table artifacts enable row level security;

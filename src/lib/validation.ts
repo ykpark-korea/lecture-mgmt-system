@@ -47,11 +47,23 @@ export const artifactSchema = z
     sortOrder: z.number().int().min(0).default(0)
   })
   .superRefine((value, context) => {
-    if (value.type === "file" && !value.storagePath) {
-      context.addIssue({ code: "custom", path: ["storagePath"], message: "file artifact requires storagePath" });
+    if (value.type === "file") {
+      if (!value.storagePath) {
+        context.addIssue({ code: "custom", path: ["storagePath"], message: "file artifact requires storagePath" });
+      }
+
+      if (value.url) {
+        context.addIssue({ code: "custom", path: ["url"], message: "file artifact must not include url" });
+      }
     }
 
-    if (value.type === "link" && !value.url) {
-      context.addIssue({ code: "custom", path: ["url"], message: "link artifact requires url" });
+    if (value.type === "link") {
+      if (!value.url) {
+        context.addIssue({ code: "custom", path: ["url"], message: "link artifact requires url" });
+      }
+
+      if (value.storagePath) {
+        context.addIssue({ code: "custom", path: ["storagePath"], message: "link artifact must not include storagePath" });
+      }
     }
   });

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { artifactSchema, isAllowedArtifactFile, isAllowedHtmlFile, learnerCodeSchema } from "@/src/lib/validation";
 
 describe("validation", () => {
+  const lectureId = "550e8400-e29b-41d4-a716-446655440000";
+
   it("accepts learner codes with useful characters", () => {
     expect(learnerCodeSchema.parse("HPMP-2026")).toBe("HPMP-2026");
   });
@@ -24,10 +26,36 @@ describe("validation", () => {
   it("requires storage path for file artifacts", () => {
     expect(() =>
       artifactSchema.parse({
-        lectureId: "11111111-1111-1111-1111-111111111111",
+        lectureId,
         type: "file",
         category: "practice",
         title: "Practice file"
+      })
+    ).toThrow();
+  });
+
+  it("rejects file artifacts with a url", () => {
+    expect(() =>
+      artifactSchema.parse({
+        lectureId,
+        type: "file",
+        category: "practice",
+        title: "Practice file",
+        storagePath: "lectures/practice.zip",
+        url: "https://example.com/practice.zip"
+      })
+    ).toThrow();
+  });
+
+  it("rejects link artifacts with a storage path", () => {
+    expect(() =>
+      artifactSchema.parse({
+        lectureId,
+        type: "link",
+        category: "external",
+        title: "External link",
+        storagePath: "lectures/external.pdf",
+        url: "https://example.com/reference"
       })
     ).toThrow();
   });
