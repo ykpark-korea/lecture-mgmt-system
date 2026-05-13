@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { artifactSchema, isAllowedArtifactFile, isAllowedHtmlFile, learnerCodeSchema } from "@/src/lib/validation";
+import {
+  artifactSchema,
+  createAccessCodeSchema,
+  createLectureSchema,
+  isAllowedArtifactFile,
+  isAllowedHtmlFile,
+  isAllowedImageFile,
+  learnerCodeSchema
+} from "@/src/lib/validation";
 
 describe("validation", () => {
   const lectureId = "550e8400-e29b-41d4-a716-446655440000";
@@ -21,6 +29,32 @@ describe("validation", () => {
     expect(isAllowedArtifactFile("practice.zip")).toBe(true);
     expect(isAllowedArtifactFile("guide.pdf")).toBe(true);
     expect(isAllowedArtifactFile("script.exe")).toBe(false);
+  });
+
+  it("allows image uploads only for common web image extensions", () => {
+    expect(isAllowedImageFile("hero.webp")).toBe(true);
+    expect(isAllowedImageFile("hero.pdf")).toBe(false);
+  });
+
+  it("defaults optional lecture creation fields", () => {
+    expect(createLectureSchema.parse({ title: "  MVP 강의  " })).toMatchObject({
+      title: "MVP 강의",
+      description: "",
+      status: "draft",
+      usesDefaultHero: true,
+      sortOrder: 0
+    });
+  });
+
+  it("requires access code end time after start time", () => {
+    expect(() =>
+      createAccessCodeSchema.parse({
+        name: "May cohort",
+        code: "HANWHA-2026",
+        startsAt: "2026-05-13T09:00:00.000Z",
+        endsAt: "2026-05-13T09:00:00.000Z"
+      })
+    ).toThrow();
   });
 
   it("requires storage path for file artifacts", () => {

@@ -23,6 +23,7 @@ export const allowedArtifactExtensions = [
   ".jpeg",
   ".webp"
 ] as const;
+export const allowedImageExtensions = [".png", ".jpg", ".jpeg", ".webp", ".gif"] as const;
 
 function hasAllowedExtension(fileName: string, extensions: readonly string[]) {
   const lower = fileName.toLowerCase();
@@ -35,6 +36,10 @@ export function isAllowedHtmlFile(fileName: string) {
 
 export function isAllowedArtifactFile(fileName: string) {
   return hasAllowedExtension(fileName, allowedArtifactExtensions);
+}
+
+export function isAllowedImageFile(fileName: string) {
+  return hasAllowedExtension(fileName, allowedImageExtensions);
 }
 
 export function isHttpUrl(value: string | null | undefined): value is string {
@@ -50,6 +55,30 @@ export function isHttpUrl(value: string | null | undefined): value is string {
     return false;
   }
 }
+
+export const createLectureSchema = z.object({
+  title: z.string().trim().min(1).max(160),
+  description: z.string().trim().max(1000).default(""),
+  status: lectureStatusSchema.default("draft"),
+  htmlStoragePath: z.string().trim().min(1).optional(),
+  thumbnailStoragePath: z.string().trim().min(1).optional(),
+  usesDefaultHero: z.boolean().default(true),
+  sortOrder: z.number().int().min(0).default(0)
+});
+
+export const createAccessCodeSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    code: learnerCodeSchema,
+    startsAt: z.string().datetime(),
+    endsAt: z.string().datetime(),
+    isActive: z.boolean().default(true),
+    notes: z.string().trim().max(500).optional()
+  })
+  .refine((value) => new Date(value.endsAt).getTime() > new Date(value.startsAt).getTime(), {
+    path: ["endsAt"],
+    message: "endsAt must be after startsAt"
+  });
 
 export const artifactSchema = z
   .object({
