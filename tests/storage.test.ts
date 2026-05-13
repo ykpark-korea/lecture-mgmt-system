@@ -23,4 +23,20 @@ describe("storage", () => {
       "Storage file name must include at least one alphanumeric character"
     );
   });
+
+  it("uses a deterministic basename fallback for non-Latin filenames with extensions", () => {
+    const path = buildStoragePath("lecture-artifacts", "lecture-1", "자료.pdf");
+
+    expect(path).toMatch(/^lecture-1\/file-[a-z0-9]+\.pdf$/);
+    expect(path).not.toBe("lecture-1/.pdf");
+    expect(buildStoragePath("lecture-artifacts", "lecture-1", "자료.pdf")).toBe(path);
+  });
+
+  it("uses a deterministic basename fallback for punctuation-only filenames with extensions", () => {
+    const path = buildStoragePath("lecture-artifacts", "lecture-1", "!!!.pdf");
+
+    expect(path).toMatch(/^lecture-1\/file-[a-z0-9]+\.pdf$/);
+    expect(path).not.toBe("lecture-1/.pdf");
+    expect(buildStoragePath("lecture-artifacts", "lecture-1", "!!!.pdf")).toBe(path);
+  });
 });

@@ -5,19 +5,44 @@ export type StorageBucket = "lecture-html" | "lecture-artifacts" | "lecture-imag
 export function buildStoragePath(bucket: StorageBucket, ownerId: string, fileName: string): string {
   void bucket;
 
-  const safeName = fileName
+  const normalizedFileName = fileName.normalize("NFKD").toLowerCase();
+  const extensionStart = normalizedFileName.lastIndexOf(".");
+  const hasExtension = extensionStart >= 0 && extensionStart < normalizedFileName.length - 1;
+  const rawBaseName = hasExtension ? normalizedFileName.slice(0, extensionStart) : normalizedFileName;
+  const rawExtension = hasExtension ? normalizedFileName.slice(extensionStart + 1) : "";
+  const safeBaseName = sanitizeStoragePathPart(rawBaseName);
+  const safeExtension = sanitizeStoragePathPart(rawExtension);
+  const hasSafeBaseName = /[a-z0-9]/.test(safeBaseName);
+  const hasSafeExtension = /[a-z0-9]/.test(safeExtension);
+
+  if (!hasSafeBaseName && !hasSafeExtension) {
+    throw new Error("Storage file name must include at least one alphanumeric character");
+  }
+
+  const baseName = hasSafeBaseName ? safeBaseName : `file-${hashFileName(fileName)}`;
+  const safeName = hasSafeExtension ? `${baseName}.${safeExtension}` : baseName;
+
+  return `${ownerId}/${safeName}`;
+}
+
+function sanitizeStoragePathPart(value: string): string {
+  return value
     .normalize("NFKD")
     .toLowerCase()
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9.]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
 
-  if (!/[a-z0-9]/.test(safeName)) {
-    throw new Error("Storage file name must include at least one alphanumeric character");
+function hashFileName(fileName: string): string {
+  let hash = 0;
+
+  for (const character of fileName.normalize("NFKD")) {
+    hash = Math.imul(hash ^ (character.codePointAt(0) ?? 0), 16777619);
   }
 
-  return `${ownerId}/${safeName}`;
+  return (hash >>> 0).toString(36);
 }
 
 export async function createSignedDownloadUrl(
