@@ -30,27 +30,27 @@ export default async function LecturePage({ params }: LecturePageProps) {
     <main className="min-h-screen px-4 py-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[96rem] space-y-4">
         <header className="overflow-hidden rounded-lg border border-white/80 bg-white/86 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl">
-          <div className="h-2 bg-gradient-to-r from-cool-mint via-cool-aqua to-cool-blue" />
-          <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-3">
+          <div className="h-1 bg-gradient-to-r from-cool-mint via-cool-aqua to-cool-blue" />
+          <div className="flex flex-col gap-2 px-3 py-2.5 sm:px-4 lg:flex-row lg:items-center lg:gap-4">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <Link
                   href="/lectures"
-                  className="inline-flex items-center gap-2 rounded-md border border-cool-mist bg-cool-ice px-3 py-2 text-sm font-semibold text-cool-ink transition hover:border-cool-blue/50 hover:text-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-cool-mist bg-cool-ice px-2.5 py-1.5 text-sm font-semibold text-cool-ink transition hover:border-cool-blue/50 hover:text-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
                 >
                   <ArrowLeft aria-hidden="true" size={16} />
                   목록으로
                 </Link>
-                <p className="inline-flex items-center gap-2 text-sm font-bold text-hanwha-orange">
+                <p className="inline-flex items-center gap-1.5 text-sm font-bold text-hanwha-orange">
                   <Layers3 aria-hidden="true" size={16} />
                   Hanwha Lecture Workspace
                 </p>
-              </div>
-              <h1 className="mt-3 break-words text-2xl font-black tracking-normal text-cool-ink sm:text-3xl">
+            </div>
+            <div className="min-w-0 lg:border-l lg:border-cool-mist lg:pl-4">
+              <h1 className="truncate text-xl font-black tracking-normal text-cool-ink sm:text-2xl">
                 {lecture.title}
               </h1>
               {lecture.description ? (
-                <p className="mt-2 max-w-5xl text-sm leading-6 text-slate-600">{lecture.description}</p>
+                <p className="mt-0.5 truncate text-sm font-medium text-slate-600">{lecture.description}</p>
               ) : null}
             </div>
           </div>
