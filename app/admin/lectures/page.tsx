@@ -1,6 +1,5 @@
-import { ArtifactEditor } from "@/components/admin/ArtifactEditor";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { LectureEditor } from "@/components/admin/LectureEditor";
+import { LectureAdminWorkspace } from "@/components/admin/LectureAdminWorkspace";
 
 export default function AdminLecturesPage() {
   return (
@@ -10,13 +9,10 @@ export default function AdminLecturesPage() {
           <p className="text-sm font-bold text-cool-blue">Lectures</p>
           <h1 className="mt-2 text-3xl font-black">강의 관리</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            강좌 생성, HTML 업로드, 공개 상태, 아티팩트를 관리합니다.
+            강좌 목록을 기준으로 공개 상태, 강의자료, 학습자료, 접속 코드 연결을 한곳에서 관리합니다.
           </p>
         </section>
-        <div className="grid gap-5 lg:grid-cols-2">
-          <LectureEditor />
-          <ArtifactEditor />
-        </div>
+        <LectureAdminWorkspace />
       </div>
     </AdminShell>
   );
