@@ -2,6 +2,7 @@ export type LectureStatus = "draft" | "active" | "inactive";
 export type LectureMaterialType = "html" | "pdf" | "ppt" | "pptx";
 export type ArtifactType = "file" | "link";
 export type ArtifactCategory = "practice" | "reference" | "external" | "preparation";
+export type LoginAuditResult = "success" | "invalid_format" | "not_found" | "not_started" | "expired" | "inactive" | "db_error";
 
 export interface AccessCode {
   id: string;
@@ -64,6 +65,21 @@ export interface Artifact {
   sort_order: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface LoginAuditLog {
+  id: string;
+  created_at: string;
+  result: LoginAuditResult;
+  access_code_id: string | null;
+  code_fingerprint: string;
+  normalized_preview: string | null;
+  input_length: number;
+  changed_by_normalization: boolean;
+  user_agent: string | null;
+  ip_hash: string | null;
+  request_region: string | null;
+  error_message: string | null;
 }
 
 type TableDefinition<Row, Insert, Update> = {
@@ -151,6 +167,13 @@ type ArtifactInsert = Omit<
 
 type ArtifactUpdate = Partial<ArtifactInsert>;
 
+type LoginAuditLogInsert = Omit<LoginAuditLog, "id" | "created_at"> & {
+  id?: string;
+  created_at?: string;
+};
+
+type LoginAuditLogUpdate = Partial<LoginAuditLogInsert>;
+
 export interface Database {
   public: {
     Tables: {
@@ -163,6 +186,7 @@ export interface Database {
         LectureAccessCodeUpdate
       >;
       artifacts: TableDefinition<Artifact, ArtifactInsert, ArtifactUpdate>;
+      login_audit_logs: TableDefinition<LoginAuditLog, LoginAuditLogInsert, LoginAuditLogUpdate>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

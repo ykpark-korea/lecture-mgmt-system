@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BarChart3, BookOpenCheck, KeyRound, Settings, ShieldCheck } from "lucide-react";
+import { Activity, BarChart3, BookOpenCheck, KeyRound, Settings, ShieldCheck } from "lucide-react";
 import { requireActiveAdminSession } from "@/src/lib/admin";
 
 const navItems = [
   { href: "/admin", label: "운영 현황", icon: BarChart3 },
   { href: "/admin/lectures", label: "강의 관리", icon: BookOpenCheck },
   { href: "/admin/codes", label: "접속 코드", icon: KeyRound },
+  { href: "/admin/audit", label: "접속 로그", icon: Activity },
   { href: "/admin/settings", label: "설정", icon: Settings }
 ];
 
