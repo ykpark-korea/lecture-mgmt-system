@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   ExternalLink,
@@ -732,6 +732,8 @@ export function LectureAdminWorkspace() {
           {activeTab === "material" ? (
             <MaterialTab
               form={lectureForm}
+              materialFile={materialFile}
+              displayPdfFile={displayPdfFile}
               updateForm={updateLectureForm}
               selectMaterialFile={selectMaterialFile}
               setDisplayPdfFile={setDisplayPdfFile}
@@ -742,6 +744,7 @@ export function LectureAdminWorkspace() {
               selectedLecture={selectedLecture}
               artifacts={selectedArtifacts}
               form={artifactForm}
+              artifactFile={artifactFile}
               updateForm={updateArtifactForm}
               setArtifactFile={setArtifactFile}
               createArtifact={createArtifact}
@@ -818,30 +821,82 @@ function BasicTab({ form, updateForm }: { form: typeof emptyLectureForm; updateF
   );
 }
 
+function FilePicker({
+  id,
+  label,
+  accept,
+  file,
+  currentPath,
+  helper,
+  className = "",
+  onFileChange
+}: {
+  id: string;
+  label: string;
+  accept?: string;
+  file: File | null;
+  currentPath?: string;
+  helper?: string;
+  className?: string;
+  onFileChange: (file: File | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const displayText = file?.name ?? currentPath ?? "선택된 파일 없음";
+
+  return (
+    <div className={`text-sm font-bold text-slate-700 ${className}`}>
+      <span id={`${id}-label`}>{label}</span>
+      <input
+        ref={inputRef}
+        id={id}
+        type="file"
+        accept={accept}
+        aria-labelledby={`${id}-label`}
+        onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+        className="sr-only"
+      />
+      <div className="mt-2 flex min-h-12 items-center gap-3 rounded-md border border-cool-mist bg-white px-3 py-2">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="inline-flex shrink-0 items-center gap-2 rounded-md border border-cool-mist bg-cool-ice px-3 py-2 text-sm font-black text-cool-blue transition hover:border-cool-blue/50 hover:bg-white focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
+        >
+          <FileUp size={16} aria-hidden="true" />
+          파일 선택
+        </button>
+        <span className="min-w-0 truncate text-sm font-bold text-cool-ink">{displayText}</span>
+      </div>
+      {helper ? <span className="mt-2 block text-xs font-medium text-slate-500">{helper}</span> : null}
+      {currentPath ? <span className="mt-1 block truncate text-xs font-medium text-slate-500">현재 파일: {currentPath}</span> : null}
+    </div>
+  );
+}
+
 function MaterialTab({
   form,
+  materialFile,
+  displayPdfFile,
   updateForm,
   selectMaterialFile,
   setDisplayPdfFile
 }: {
   form: typeof emptyLectureForm;
+  materialFile: File | null;
+  displayPdfFile: File | null;
   updateForm: (field: keyof typeof emptyLectureForm, value: string) => void;
   selectMaterialFile: (file: File | null) => void;
   setDisplayPdfFile: (file: File | null) => void;
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <label className="text-sm font-bold text-slate-700" htmlFor="workspace-material">
-        강의자료
-        <input
-          id="workspace-material"
-          type="file"
-          accept=".html,.pdf,.ppt,.pptx,text/html,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-          onChange={(event) => selectMaterialFile(event.target.files?.[0] ?? null)}
-          className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cool-ice file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-cool-blue focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
-        />
-        {form.materialStoragePath ? <span className="mt-2 block text-xs font-medium text-slate-500">{form.materialStoragePath}</span> : null}
-      </label>
+      <FilePicker
+        id="workspace-material"
+        label="강의자료"
+        accept=".html,.pdf,.ppt,.pptx,text/html,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        file={materialFile}
+        currentPath={form.materialStoragePath}
+        onFileChange={selectMaterialFile}
+      />
       <label className="text-sm font-bold text-slate-700" htmlFor="workspace-material-type">
         자료 유형
         <select
@@ -856,20 +911,16 @@ function MaterialTab({
           <option value="pptx">PPTX</option>
         </select>
       </label>
-      <label className="text-sm font-bold text-slate-700 lg:col-span-2" htmlFor="workspace-display-pdf">
-        표시용 PDF
-        <input
-          id="workspace-display-pdf"
-          type="file"
-          accept=".pdf,application/pdf"
-          onChange={(event) => setDisplayPdfFile(event.target.files?.[0] ?? null)}
-          className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cool-ice file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-cool-blue focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
-        />
-        <span className="mt-2 block text-xs font-medium text-slate-500">
-          PPT/PPTX는 표시용 PDF가 있으면 학습자 화면에서 키보드로 페이지를 넘길 수 있습니다.
-          {form.displayPdfStoragePath ? ` 현재 파일: ${form.displayPdfStoragePath}` : ""}
-        </span>
-      </label>
+      <FilePicker
+        id="workspace-display-pdf"
+        label="표시용 PDF"
+        accept=".pdf,application/pdf"
+        file={displayPdfFile}
+        currentPath={form.displayPdfStoragePath}
+        onFileChange={setDisplayPdfFile}
+        className="lg:col-span-2"
+        helper="PPT/PPTX는 표시용 PDF가 있으면 학습자 화면에서 키보드로 페이지를 넘길 수 있습니다."
+      />
     </div>
   );
 }
@@ -878,6 +929,7 @@ function ArtifactsTab({
   selectedLecture,
   artifacts,
   form,
+  artifactFile,
   updateForm,
   setArtifactFile,
   createArtifact,
@@ -886,6 +938,7 @@ function ArtifactsTab({
   selectedLecture: Lecture | null;
   artifacts: Artifact[];
   form: typeof emptyArtifactForm;
+  artifactFile: File | null;
   updateForm: (field: keyof typeof emptyArtifactForm, value: string | boolean) => void;
   setArtifactFile: (file: File | null) => void;
   createArtifact: () => void;
@@ -945,10 +998,7 @@ function ArtifactsTab({
               <input id="workspace-artifact-url" value={form.url} onChange={(event) => updateForm("url", event.target.value)} className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20" placeholder="https://..." />
             </label>
           ) : (
-            <label className="text-sm font-bold text-slate-700" htmlFor="workspace-artifact-file">
-              파일
-              <input id="workspace-artifact-file" type="file" onChange={(event) => setArtifactFile(event.target.files?.[0] ?? null)} className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-cool-blue focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20" />
-            </label>
+            <FilePicker id="workspace-artifact-file" label="파일" file={artifactFile} onFileChange={setArtifactFile} />
           )}
           <label className="text-sm font-bold text-slate-700" htmlFor="workspace-artifact-description">
             설명
