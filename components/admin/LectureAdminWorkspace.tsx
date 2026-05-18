@@ -308,6 +308,7 @@ export function LectureAdminWorkspace() {
     setMessage("");
 
     try {
+      const shouldKeepExistingMaterialPath = selectedLecture && !materialFile;
       const lectureBasePayload = {
         ...(selectedLecture ? { id: selectedLecture.id } : {}),
         title: lectureForm.title,
@@ -323,8 +324,8 @@ export function LectureAdminWorkspace() {
           selectedLecture
             ? {
                 ...lectureBasePayload,
-                ...(lectureForm.materialStoragePath ? { materialStoragePath: lectureForm.materialStoragePath } : {}),
-                ...(lectureForm.materialType === "html" && lectureForm.materialStoragePath
+                ...(shouldKeepExistingMaterialPath && lectureForm.materialStoragePath ? { materialStoragePath: lectureForm.materialStoragePath } : {}),
+                ...(shouldKeepExistingMaterialPath && lectureForm.materialType === "html" && lectureForm.materialStoragePath
                   ? { htmlStoragePath: lectureForm.materialStoragePath }
                   : {}),
                 ...(lectureForm.displayPdfStoragePath ? { displayPdfStoragePath: lectureForm.displayPdfStoragePath } : {})

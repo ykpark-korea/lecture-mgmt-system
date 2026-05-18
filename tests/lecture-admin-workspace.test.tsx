@@ -28,6 +28,21 @@ const lectureWithMaterial = {
   material_storage_path: `${createdLecture.id}/lecture.html`
 };
 
+const existingHtmlLecture = {
+  ...createdLecture,
+  id: "22222222-2222-4222-8222-222222222222",
+  title: "기존 HTML 강의",
+  html_storage_path: "22222222-2222-4222-8222-222222222222/lecture.html",
+  material_storage_path: "22222222-2222-4222-8222-222222222222/lecture.html"
+};
+
+const existingPdfLecture = {
+  ...existingHtmlLecture,
+  html_storage_path: null,
+  material_type: "pdf",
+  material_storage_path: "22222222-2222-4222-8222-222222222222/2.pdf"
+};
+
 describe("LectureAdminWorkspace", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -82,6 +97,54 @@ describe("LectureAdminWorkspace", () => {
       materialType: "html",
       materialStoragePath: `${createdLecture.id}/lecture.html`,
       htmlStoragePath: `${createdLecture.id}/lecture.html`
+    });
+  });
+
+  it("does not send an existing html material path while replacing a selected lecture with a pdf", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ lectures: [existingHtmlLecture] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ artifacts: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ codes: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ links: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ lecture: existingHtmlLecture }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          path: `${existingHtmlLecture.id}/2.pdf`,
+          upload: {
+            signedUrl: "https://upload.example.com",
+            contentType: "application/pdf"
+          }
+        })
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ lecture: existingPdfLecture }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "강의자료" }));
+    fireEvent.change(screen.getByLabelText("강의자료"), {
+      target: {
+        files: [new File(["pdf"], "2교시_강의안.pdf", { type: "application/pdf" })]
+      }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(8));
+    expect(fetchMock.mock.calls[4][0]).toBe("/api/admin/lectures");
+    expect(fetchMock.mock.calls[4][1]).toMatchObject({ method: "PATCH" });
+    const initialPatchBody = JSON.parse(fetchMock.mock.calls[4][1].body);
+    expect(initialPatchBody).toMatchObject({
+      id: existingHtmlLecture.id,
+      materialType: "pdf"
+    });
+    expect(initialPatchBody).not.toHaveProperty("materialStoragePath");
+    expect(initialPatchBody).not.toHaveProperty("htmlStoragePath");
+    expect(JSON.parse(fetchMock.mock.calls[7][1].body)).toMatchObject({
+      id: existingHtmlLecture.id,
+      materialType: "pdf",
+      materialStoragePath: `${existingHtmlLecture.id}/2.pdf`
     });
   });
 });
