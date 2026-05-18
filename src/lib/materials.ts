@@ -5,7 +5,7 @@ export type LectureMaterialType = (typeof lectureMaterialTypes)[number];
 export function detectLectureMaterialType(fileName: string): LectureMaterialType | null {
   const lower = fileName.trim().toLowerCase();
 
-  if (lower.endsWith(".html")) {
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) {
     return "html";
   }
 

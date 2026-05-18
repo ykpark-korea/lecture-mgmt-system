@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireActiveAdminSession } from "@/src/lib/admin";
 import { buildStoragePath, createSignedUploadUrl, type StorageBucket } from "@/src/lib/storage";
-import { isAllowedUploadContentType } from "@/src/lib/validation";
+import { normalizeUploadContentType } from "@/src/lib/validation";
 
 const storageBuckets = ["lecture-html", "lecture-artifacts", "lecture-images"] as const satisfies readonly StorageBucket[];
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -42,11 +42,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid fileName" }, { status: 400 });
   }
 
-  if (!contentType) {
-    return NextResponse.json({ error: "contentType is required" }, { status: 400 });
-  }
+  const safeContentType = normalizeUploadContentType(bucket, fileName, contentType);
 
-  if (!isAllowedUploadContentType(bucket, fileName, contentType)) {
+  if (!safeContentType) {
     return NextResponse.json({ error: "File type or contentType is not allowed for this bucket" }, { status: 400 });
   }
 
@@ -54,7 +52,7 @@ export async function POST(request: NextRequest) {
     const path = buildStoragePath(bucket, ownerId, fileName);
     const signedUrl = await createSignedUploadUrl(bucket, path);
 
-    return NextResponse.json({ path, upload: { signedUrl, contentType } });
+    return NextResponse.json({ path, upload: { signedUrl, contentType: safeContentType } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create upload URL";
 

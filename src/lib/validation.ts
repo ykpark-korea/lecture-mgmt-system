@@ -13,8 +13,8 @@ export const httpUrlSchema = z.string().url().refine(isHttpUrl, {
   message: "URL must use http or https"
 });
 
-export const allowedHtmlExtensions = [".html"] as const;
-export const allowedLectureMaterialExtensions = [".html", ".pdf", ".ppt", ".pptx"] as const;
+export const allowedHtmlExtensions = [".html", ".htm"] as const;
+export const allowedLectureMaterialExtensions = [".html", ".htm", ".pdf", ".ppt", ".pptx"] as const;
 export const allowedArtifactExtensions = [
   ".pdf",
   ".zip",
@@ -100,20 +100,59 @@ export function isValidStoragePath(bucket: StorageBucket, path: string) {
 }
 
 export function isAllowedUploadContentType(bucket: StorageBucket, fileName: string, contentType: string) {
+  return Boolean(normalizeUploadContentType(bucket, fileName, contentType));
+}
+
+export function normalizeUploadContentType(bucket: StorageBucket, fileName: string, contentType: string) {
   const normalizedContentType = contentType.trim().toLowerCase();
+  const lower = fileName.toLowerCase();
 
   if (bucket === "lecture-html") {
-    return (
-      isAllowedLectureMaterialFile(fileName) &&
-      allowedLectureMaterialContentTypes.includes(normalizedContentType as never)
-    );
+    if (!isAllowedLectureMaterialFile(fileName)) return null;
+
+    if (allowedLectureMaterialContentTypes.includes(normalizedContentType as never)) {
+      return getLectureMaterialContentTypeFromFileName(lower);
+    }
+
+    return getLectureMaterialContentTypeFromFileName(lower);
   }
 
   if (bucket === "lecture-images") {
-    return isAllowedImageContentType(fileName, normalizedContentType);
+    if (!isAllowedImageContentType(fileName, normalizedContentType)) return null;
+
+    return normalizedContentType;
   }
 
-  return isAllowedArtifactFile(fileName) && allowedArtifactContentTypes.includes(normalizedContentType as never);
+  if (!isAllowedArtifactFile(fileName)) return null;
+
+  if (allowedArtifactContentTypes.includes(normalizedContentType as never)) {
+    return getArtifactContentTypeFromFileName(lower);
+  }
+
+  return getArtifactContentTypeFromFileName(lower);
+}
+
+function getLectureMaterialContentTypeFromFileName(fileName: string) {
+  if (fileName.endsWith(".html") || fileName.endsWith(".htm")) return "text/html";
+  if (fileName.endsWith(".pdf")) return "application/pdf";
+  if (fileName.endsWith(".ppt")) return "application/vnd.ms-powerpoint";
+  if (fileName.endsWith(".pptx")) return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+  return null;
+}
+
+function getArtifactContentTypeFromFileName(fileName: string) {
+  if (fileName.endsWith(".pdf")) return "application/pdf";
+  if (fileName.endsWith(".zip")) return "application/zip";
+  if (fileName.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  if (fileName.endsWith(".pptx")) return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+  if (fileName.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (fileName.endsWith(".csv")) return "text/csv";
+  if (fileName.endsWith(".png")) return "image/png";
+  if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";
+  if (fileName.endsWith(".webp")) return "image/webp";
+
+  return null;
 }
 
 function isAllowedImageContentType(fileName: string, contentType: string) {
@@ -161,7 +200,7 @@ const htmlStoragePathSchema = z
   .trim()
   .min(1)
   .refine((path) => isValidStoragePath("lecture-html", path) && isAllowedHtmlFile(path.split("/")[1] ?? ""), {
-    message: "htmlStoragePath must be a safe lecture-html path ending in .html"
+    message: "htmlStoragePath must be a safe lecture-html path ending in .html or .htm"
   });
 
 const lectureMaterialStoragePathSchema = z
@@ -169,7 +208,7 @@ const lectureMaterialStoragePathSchema = z
   .trim()
   .min(1)
   .refine((path) => isValidStoragePath("lecture-html", path), {
-    message: "materialStoragePath must be a safe lecture-html path ending in .html, .pdf, .ppt, or .pptx"
+    message: "materialStoragePath must be a safe lecture-html path ending in .html, .htm, .pdf, .ppt, or .pptx"
   });
 
 const displayPdfStoragePathSchema = z

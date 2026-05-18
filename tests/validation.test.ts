@@ -11,6 +11,7 @@ import {
   isValidStoragePath,
   linkLectureAccessCodeSchema,
   learnerCodeSchema,
+  normalizeUploadContentType,
   updateAccessCodeSchema,
   updateLectureSchema
 } from "@/src/lib/validation";
@@ -28,11 +29,13 @@ describe("validation", () => {
 
   it("keeps legacy html-only validation for htmlStoragePath", () => {
     expect(isAllowedHtmlFile("lecture.html")).toBe(true);
+    expect(isAllowedHtmlFile("lecture.htm")).toBe(true);
     expect(isAllowedHtmlFile("lecture.pdf")).toBe(false);
   });
 
   it("allows lecture material uploads for html, pdf, ppt, and pptx", () => {
     expect(isAllowedLectureMaterialFile("lecture.html")).toBe(true);
+    expect(isAllowedLectureMaterialFile("lecture.htm")).toBe(true);
     expect(isAllowedLectureMaterialFile("lecture.pdf")).toBe(true);
     expect(isAllowedLectureMaterialFile("lecture.ppt")).toBe(true);
     expect(isAllowedLectureMaterialFile("lecture.pptx")).toBe(true);
@@ -152,8 +155,11 @@ describe("validation", () => {
 
   it("validates upload content type by bucket and extension", () => {
     expect(isAllowedUploadContentType("lecture-html", "lecture.html", "text/html")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-html", "lecture.htm", "application/octet-stream")).toBe(true);
     expect(isAllowedUploadContentType("lecture-html", "lecture.pdf", "application/pdf")).toBe(true);
     expect(isAllowedUploadContentType("lecture-html", "lecture.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-html", "lecture.pptx", "application/zip")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-html", "lecture.pdf", "")).toBe(true);
     expect(isAllowedUploadContentType("lecture-html", "lecture.exe", "application/octet-stream")).toBe(false);
     expect(isAllowedUploadContentType("lecture-images", "hero.webp", "image/webp")).toBe(true);
     expect(isAllowedUploadContentType("lecture-images", "hero.png", "image/png")).toBe(true);
@@ -162,7 +168,23 @@ describe("validation", () => {
     expect(isAllowedUploadContentType("lecture-images", "hero.png", "image/jpeg")).toBe(false);
     expect(isAllowedUploadContentType("lecture-images", "hero.pdf", "image/png")).toBe(false);
     expect(isAllowedUploadContentType("lecture-artifacts", "practice.zip", "application/octet-stream")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-artifacts", "practice.zip", "application/x-zip-compressed")).toBe(true);
     expect(isAllowedUploadContentType("lecture-artifacts", "script.exe", "application/octet-stream")).toBe(false);
+  });
+
+  it("normalizes browser-specific upload content types from safe extensions", () => {
+    expect(normalizeUploadContentType("lecture-html", "lecture.pptx", "application/zip")).toBe(
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    );
+    expect(normalizeUploadContentType("lecture-html", "lecture.pdf", "")).toBe("application/pdf");
+    expect(normalizeUploadContentType("lecture-html", "lecture.htm", "application/octet-stream")).toBe("text/html");
+    expect(normalizeUploadContentType("lecture-artifacts", "practice.zip", "application/x-zip-compressed")).toBe(
+      "application/zip"
+    );
+    expect(normalizeUploadContentType("lecture-artifacts", "sheet.xlsx", "")).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    expect(normalizeUploadContentType("lecture-images", "hero.png", "image/jpeg")).toBeNull();
   });
 
   it("requires access code end time after start time", () => {
