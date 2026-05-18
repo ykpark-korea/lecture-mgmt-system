@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   ExternalLink,
@@ -840,30 +840,24 @@ function FilePicker({
   className?: string;
   onFileChange: (file: File | null) => void;
 }) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const displayText = file?.name ?? currentPath ?? "선택된 파일 없음";
 
   return (
     <div className={`text-sm font-bold text-slate-700 ${className}`}>
       <span id={`${id}-label`}>{label}</span>
-      <input
-        ref={inputRef}
-        id={id}
-        type="file"
-        accept={accept}
-        aria-labelledby={`${id}-label`}
-        onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
-        className="sr-only"
-      />
-      <div className="mt-2 flex min-h-12 items-center gap-3 rounded-md border border-cool-mist bg-white px-3 py-2">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="inline-flex shrink-0 items-center gap-2 rounded-md border border-cool-mist bg-cool-ice px-3 py-2 text-sm font-black text-cool-blue transition hover:border-cool-blue/50 hover:bg-white focus:outline-none focus:ring-4 focus:ring-cool-blue/20"
-        >
+      <div className="relative mt-2 flex min-h-12 items-center gap-3 rounded-md border border-cool-mist bg-white px-3 py-2 transition focus-within:border-cool-blue focus-within:ring-4 focus-within:ring-cool-blue/20">
+        <input
+          id={id}
+          type="file"
+          accept={accept}
+          aria-labelledby={`${id}-label`}
+          onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+          className="absolute inset-0 z-10 cursor-pointer opacity-0"
+        />
+        <span className="inline-flex shrink-0 items-center gap-2 rounded-md border border-cool-mist bg-cool-ice px-3 py-2 text-sm font-black text-cool-blue">
           <FileUp size={16} aria-hidden="true" />
           파일 선택
-        </button>
+        </span>
         <span className="min-w-0 truncate text-sm font-bold text-cool-ink">{displayText}</span>
       </div>
       {helper ? <span className="mt-2 block text-xs font-medium text-slate-500">{helper}</span> : null}
