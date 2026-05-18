@@ -308,48 +308,75 @@ export function LectureAdminWorkspace() {
     setMessage("");
 
     try {
-      const isNew = !selectedLecture;
-      const uploadOwnerId = selectedLecture?.id ?? crypto.randomUUID();
-      const materialStoragePath = await uploadLectureFileIfNeeded(
-        materialFile,
-        lectureForm.materialStoragePath,
-        lectureForm.materialType === "html" ? "text/html" : "application/octet-stream",
-        uploadOwnerId
-      );
-      const displayPdfStoragePath = await uploadLectureFileIfNeeded(
-        displayPdfFile,
-        lectureForm.displayPdfStoragePath,
-        "application/pdf",
-        uploadOwnerId
-      );
-      const body = {
+      const lectureBasePayload = {
         ...(selectedLecture ? { id: selectedLecture.id } : {}),
         title: lectureForm.title,
         description: lectureForm.description,
         status: lectureForm.status,
         sortOrder: Number.parseInt(lectureForm.sortOrder || "0", 10),
-        materialType: lectureForm.materialType,
-        ...(materialStoragePath ? { materialStoragePath } : {}),
-        ...(lectureForm.materialType === "html" && materialStoragePath ? { htmlStoragePath: materialStoragePath } : {}),
-        ...(displayPdfStoragePath ? { displayPdfStoragePath } : {})
+        materialType: lectureForm.materialType
       };
       const response = await fetch("/api/admin/lectures", {
         method: selectedLecture ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: JSON.stringify(
+          selectedLecture
+            ? {
+                ...lectureBasePayload,
+                ...(lectureForm.materialStoragePath ? { materialStoragePath: lectureForm.materialStoragePath } : {}),
+                ...(lectureForm.materialType === "html" && lectureForm.materialStoragePath
+                  ? { htmlStoragePath: lectureForm.materialStoragePath }
+                  : {}),
+                ...(lectureForm.displayPdfStoragePath ? { displayPdfStoragePath: lectureForm.displayPdfStoragePath } : {})
+              }
+            : lectureBasePayload
+        )
       });
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error ?? "강좌 저장에 실패했습니다.");
 
-      const savedLecture = data.lecture as Lecture;
+      let savedLecture = data.lecture as Lecture;
+      const materialStoragePath = await uploadLectureFileIfNeeded(
+        materialFile,
+        selectedLecture ? lectureForm.materialStoragePath : "",
+        lectureForm.materialType === "html" ? "text/html" : "application/octet-stream",
+        savedLecture.id
+      );
+      const displayPdfStoragePath = await uploadLectureFileIfNeeded(
+        displayPdfFile,
+        selectedLecture ? lectureForm.displayPdfStoragePath : "",
+        "application/pdf",
+        savedLecture.id
+      );
+      const needsMaterialPatch = Boolean(materialFile || displayPdfFile || (!selectedLecture && (materialStoragePath || displayPdfStoragePath)));
+
+      if (needsMaterialPatch) {
+        const materialResponse = await fetch("/api/admin/lectures", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: savedLecture.id,
+            materialType: lectureForm.materialType,
+            ...(materialStoragePath ? { materialStoragePath } : {}),
+            ...(lectureForm.materialType === "html" && materialStoragePath ? { htmlStoragePath: materialStoragePath } : {}),
+            ...(displayPdfStoragePath ? { displayPdfStoragePath } : {})
+          })
+        });
+        const materialData = await materialResponse.json();
+
+        if (!materialResponse.ok) throw new Error(materialData.error ?? "강의자료 저장에 실패했습니다.");
+
+        savedLecture = materialData.lecture as Lecture;
+      }
+
       setLectures((current) =>
-        isNew
-          ? [...current, savedLecture].sort((a, b) => a.sort_order - b.sort_order)
-          : current.map((lecture) => (lecture.id === savedLecture.id ? savedLecture : lecture))
+        selectedLecture
+          ? current.map((lecture) => (lecture.id === savedLecture.id ? savedLecture : lecture))
+          : [...current, savedLecture].sort((a, b) => a.sort_order - b.sort_order)
       );
       selectLecture(savedLecture, false);
-      setMessage(isNew ? "새 강좌를 만들었습니다." : "강좌를 저장했습니다.");
+      setMessage(selectedLecture ? "강좌를 저장했습니다." : "새 강좌를 만들었습니다.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "강좌 저장에 실패했습니다.");
     } finally {
