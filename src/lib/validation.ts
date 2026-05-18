@@ -138,8 +138,7 @@ export function normalizeUploadContentType(bucket: StorageBucket, fileName: stri
 function getLectureMaterialContentTypeFromFileName(fileName: string) {
   if (fileName.endsWith(".html") || fileName.endsWith(".htm")) return "text/html";
   if (fileName.endsWith(".pdf")) return "application/pdf";
-  if (fileName.endsWith(".ppt")) return "application/vnd.ms-powerpoint";
-  if (fileName.endsWith(".pptx")) return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+  if (fileName.endsWith(".ppt") || fileName.endsWith(".pptx")) return "application/octet-stream";
 
   return null;
 }
@@ -148,9 +147,7 @@ function getArtifactContentTypeFromFileName(fileName: string) {
   if (fileName.endsWith(".html") || fileName.endsWith(".htm")) return "text/html";
   if (fileName.endsWith(".pdf")) return "application/pdf";
   if (fileName.endsWith(".zip")) return "application/zip";
-  if (fileName.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-  if (fileName.endsWith(".pptx")) return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-  if (fileName.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (fileName.endsWith(".xlsx") || fileName.endsWith(".pptx") || fileName.endsWith(".docx")) return "application/octet-stream";
   if (fileName.endsWith(".csv")) return "text/csv";
   if (fileName.endsWith(".png")) return "image/png";
   if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";

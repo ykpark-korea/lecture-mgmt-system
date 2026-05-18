@@ -176,17 +176,20 @@ describe("validation", () => {
   });
 
   it("normalizes browser-specific upload content types from safe extensions", () => {
-    expect(normalizeUploadContentType("lecture-html", "lecture.pptx", "application/zip")).toBe(
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-    );
+    expect(normalizeUploadContentType("lecture-html", "lecture.pptx", "application/zip")).toBe("application/octet-stream");
+    expect(
+      normalizeUploadContentType(
+        "lecture-html",
+        "2교시_교안.pptx",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+      )
+    ).toBe("application/octet-stream");
     expect(normalizeUploadContentType("lecture-html", "lecture.pdf", "")).toBe("application/pdf");
     expect(normalizeUploadContentType("lecture-html", "lecture.htm", "application/octet-stream")).toBe("text/html");
     expect(normalizeUploadContentType("lecture-artifacts", "practice.zip", "application/x-zip-compressed")).toBe(
       "application/zip"
     );
-    expect(normalizeUploadContentType("lecture-artifacts", "sheet.xlsx", "")).toBe(
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
+    expect(normalizeUploadContentType("lecture-artifacts", "sheet.xlsx", "")).toBe("application/octet-stream");
     expect(normalizeUploadContentType("lecture-artifacts", "practice.html", "application/octet-stream")).toBe("text/html");
     expect(normalizeUploadContentType("lecture-images", "hero.png", "image/jpeg")).toBeNull();
   });
