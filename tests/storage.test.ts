@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildStoragePath, createPrivateObjectResponse } from "@/src/lib/storage";
+import { buildStoragePath, buildUniqueStoragePath, createPrivateObjectResponse } from "@/src/lib/storage";
 
 const createSignedUrl = vi.fn();
 
@@ -46,6 +46,12 @@ describe("storage", () => {
     expect(path).toMatch(/^lecture-1\/file-[a-z0-9]+\.pdf$/);
     expect(path).not.toBe("lecture-1/.pdf");
     expect(buildStoragePath("lecture-artifacts", "lecture-1", "!!!.pdf")).toBe(path);
+  });
+
+  it("adds a unique suffix to upload paths to avoid storage collisions", () => {
+    const path = buildUniqueStoragePath("lecture-html", "lecture-1", "2교시_강의안.pdf");
+
+    expect(path).toMatch(/^lecture-1\/2-[a-f0-9]{8}\.pdf$/);
   });
 
   it("overrides proxied content headers for rendered lecture HTML", async () => {

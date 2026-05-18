@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createSupabaseServiceClient } from "@/src/lib/supabase";
 
 export type StorageBucket = "lecture-html" | "lecture-artifacts" | "lecture-images";
@@ -23,6 +24,19 @@ export function buildStoragePath(bucket: StorageBucket, ownerId: string, fileNam
   const safeName = hasSafeExtension ? `${baseName}.${safeExtension}` : baseName;
 
   return `${ownerId}/${safeName}`;
+}
+
+export function buildUniqueStoragePath(bucket: StorageBucket, ownerId: string, fileName: string): string {
+  const path = buildStoragePath(bucket, ownerId, fileName);
+  const [owner, safeName] = path.split("/");
+  const extensionStart = safeName.lastIndexOf(".");
+  const suffix = randomUUID().slice(0, 8);
+
+  if (extensionStart <= 0 || extensionStart === safeName.length - 1) {
+    return `${owner}/${safeName}-${suffix}`;
+  }
+
+  return `${owner}/${safeName.slice(0, extensionStart)}-${suffix}${safeName.slice(extensionStart)}`;
 }
 
 function sanitizeStoragePathPart(value: string): string {

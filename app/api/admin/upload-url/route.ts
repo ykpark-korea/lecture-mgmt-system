@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireActiveAdminSession } from "@/src/lib/admin";
-import { buildStoragePath, createSignedUploadUrl, type StorageBucket } from "@/src/lib/storage";
+import { buildUniqueStoragePath, createSignedUploadUrl, type StorageBucket } from "@/src/lib/storage";
 import { normalizeUploadContentType } from "@/src/lib/validation";
 
 const storageBuckets = ["lecture-html", "lecture-artifacts", "lecture-images"] as const satisfies readonly StorageBucket[];
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const path = buildStoragePath(bucket, ownerId, fileName);
+    const path = buildUniqueStoragePath(bucket, ownerId, fileName);
     const signedUrl = await createSignedUploadUrl(bucket, path);
 
     return NextResponse.json({ path, upload: { signedUrl, contentType: safeContentType } });
