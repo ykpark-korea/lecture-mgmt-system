@@ -16,6 +16,8 @@ export const httpUrlSchema = z.string().url().refine(isHttpUrl, {
 export const allowedHtmlExtensions = [".html", ".htm"] as const;
 export const allowedLectureMaterialExtensions = [".html", ".htm", ".pdf", ".ppt", ".pptx"] as const;
 export const allowedArtifactExtensions = [
+  ".html",
+  ".htm",
   ".pdf",
   ".zip",
   ".xlsx",
@@ -29,6 +31,7 @@ export const allowedArtifactExtensions = [
 ] as const;
 export const allowedImageExtensions = [".png", ".jpg", ".jpeg", ".webp"] as const;
 export const allowedArtifactContentTypes = [
+  "text/html",
   "application/pdf",
   "application/zip",
   "application/octet-stream",
@@ -142,6 +145,7 @@ function getLectureMaterialContentTypeFromFileName(fileName: string) {
 }
 
 function getArtifactContentTypeFromFileName(fileName: string) {
+  if (fileName.endsWith(".html") || fileName.endsWith(".htm")) return "text/html";
   if (fileName.endsWith(".pdf")) return "application/pdf";
   if (fileName.endsWith(".zip")) return "application/zip";
   if (fileName.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";

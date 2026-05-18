@@ -43,6 +43,8 @@ describe("validation", () => {
   });
 
   it("allows artifact file extensions from the MVP allowlist", () => {
+    expect(isAllowedArtifactFile("practice.html")).toBe(true);
+    expect(isAllowedArtifactFile("practice.htm")).toBe(true);
     expect(isAllowedArtifactFile("practice.zip")).toBe(true);
     expect(isAllowedArtifactFile("guide.pdf")).toBe(true);
     expect(isAllowedArtifactFile("script.exe")).toBe(false);
@@ -169,6 +171,7 @@ describe("validation", () => {
     expect(isAllowedUploadContentType("lecture-images", "hero.pdf", "image/png")).toBe(false);
     expect(isAllowedUploadContentType("lecture-artifacts", "practice.zip", "application/octet-stream")).toBe(true);
     expect(isAllowedUploadContentType("lecture-artifacts", "practice.zip", "application/x-zip-compressed")).toBe(true);
+    expect(isAllowedUploadContentType("lecture-artifacts", "practice.html", "application/octet-stream")).toBe(true);
     expect(isAllowedUploadContentType("lecture-artifacts", "script.exe", "application/octet-stream")).toBe(false);
   });
 
@@ -184,6 +187,7 @@ describe("validation", () => {
     expect(normalizeUploadContentType("lecture-artifacts", "sheet.xlsx", "")).toBe(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
+    expect(normalizeUploadContentType("lecture-artifacts", "practice.html", "application/octet-stream")).toBe("text/html");
     expect(normalizeUploadContentType("lecture-images", "hero.png", "image/jpeg")).toBeNull();
   });
 
