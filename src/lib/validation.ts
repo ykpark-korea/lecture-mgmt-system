@@ -137,15 +137,14 @@ export function normalizeUploadContentType(bucket: StorageBucket, fileName: stri
 
 function getLectureMaterialContentTypeFromFileName(fileName: string) {
   if (fileName.endsWith(".html") || fileName.endsWith(".htm")) return "text/html";
-  if (fileName.endsWith(".pdf")) return "application/pdf";
-  if (fileName.endsWith(".ppt") || fileName.endsWith(".pptx")) return "application/octet-stream";
+  if (fileName.endsWith(".pdf") || fileName.endsWith(".ppt") || fileName.endsWith(".pptx")) return "application/octet-stream";
 
   return null;
 }
 
 function getArtifactContentTypeFromFileName(fileName: string) {
   if (fileName.endsWith(".html") || fileName.endsWith(".htm")) return "text/html";
-  if (fileName.endsWith(".pdf")) return "application/pdf";
+  if (fileName.endsWith(".pdf")) return "application/octet-stream";
   if (fileName.endsWith(".zip")) return "application/zip";
   if (fileName.endsWith(".xlsx") || fileName.endsWith(".pptx") || fileName.endsWith(".docx")) return "application/octet-stream";
   if (fileName.endsWith(".csv")) return "text/csv";

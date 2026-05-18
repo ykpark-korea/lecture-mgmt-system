@@ -184,12 +184,16 @@ describe("validation", () => {
         "application/vnd.openxmlformats-officedocument.presentationml.presentation"
       )
     ).toBe("application/octet-stream");
-    expect(normalizeUploadContentType("lecture-html", "lecture.pdf", "")).toBe("application/pdf");
+    expect(normalizeUploadContentType("lecture-html", "lecture.pdf", "")).toBe("application/octet-stream");
+    expect(normalizeUploadContentType("lecture-html", "2교시_강의안.pdf", "application/pdf")).toBe(
+      "application/octet-stream"
+    );
     expect(normalizeUploadContentType("lecture-html", "lecture.htm", "application/octet-stream")).toBe("text/html");
     expect(normalizeUploadContentType("lecture-artifacts", "practice.zip", "application/x-zip-compressed")).toBe(
       "application/zip"
     );
     expect(normalizeUploadContentType("lecture-artifacts", "sheet.xlsx", "")).toBe("application/octet-stream");
+    expect(normalizeUploadContentType("lecture-artifacts", "practice.pdf", "application/pdf")).toBe("application/octet-stream");
     expect(normalizeUploadContentType("lecture-artifacts", "practice.html", "application/octet-stream")).toBe("text/html");
     expect(normalizeUploadContentType("lecture-images", "hero.png", "image/jpeg")).toBeNull();
   });
