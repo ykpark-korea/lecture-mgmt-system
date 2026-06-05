@@ -29,7 +29,9 @@ type PdfPage = {
 export default function LectureViewer({ lectureId, title, materialType, hasDisplayPdf }: LectureViewerProps) {
   const lectureUrl = `/api/lectures/${lectureId}/signed-url`;
   const sourceUrl = `/api/lectures/${lectureId}/source`;
-  const canPreview = materialType === "html" || materialType === "pdf" || hasDisplayPdf;
+  const shouldRenderHtml = materialType === "html";
+  const shouldRenderPdf = materialType === "pdf" || ((materialType === "ppt" || materialType === "pptx") && hasDisplayPdf);
+  const canPreview = shouldRenderHtml || shouldRenderPdf;
 
   return (
     <section className="overflow-hidden rounded-lg border border-white/80 bg-white/92 shadow-glass ring-1 ring-cool-mist/70 backdrop-blur-xl">
@@ -59,8 +61,8 @@ export default function LectureViewer({ lectureId, title, materialType, hasDispl
           ) : null}
         </div>
       </div>
-      {materialType === "html" ? <HtmlLectureFrame lectureUrl={lectureUrl} title={title} /> : null}
-      {materialType === "pdf" || hasDisplayPdf ? <PdfLectureFrame lectureUrl={lectureUrl} title={title} /> : null}
+      {shouldRenderHtml ? <HtmlLectureFrame lectureUrl={lectureUrl} title={title} /> : null}
+      {shouldRenderPdf ? <PdfLectureFrame lectureUrl={lectureUrl} title={title} /> : null}
       {!canPreview ? <UnsupportedLectureMaterial sourceUrl={sourceUrl} materialType={materialType} /> : null}
     </section>
   );

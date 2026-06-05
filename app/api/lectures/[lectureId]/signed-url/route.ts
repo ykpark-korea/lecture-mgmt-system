@@ -26,9 +26,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   const materialType = lecture.material_type ?? "html";
   const materialStoragePath = lecture.material_storage_path ?? lecture.html_storage_path;
-  const displayPath = materialType === "ppt" || materialType === "pptx"
-    ? lecture.display_pdf_storage_path
-    : lecture.display_pdf_storage_path ?? materialStoragePath;
+  const displayPath =
+    materialType === "ppt" || materialType === "pptx"
+      ? lecture.display_pdf_storage_path
+      : materialStoragePath;
 
   if (!displayPath) {
     return NextResponse.json({ error: "Lecture not found" }, { status: 404 });

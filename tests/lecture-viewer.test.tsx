@@ -12,4 +12,11 @@ describe("LectureViewer", () => {
     expect(screen.queryByRole("button", { name: "전체 보기" })).not.toBeInTheDocument();
     expect(screen.getByTitle("새 탭에서 열기")).toHaveAttribute("href", "/api/lectures/lecture-1/signed-url");
   });
+
+  it("does not render the pdf viewer for html lectures even when a display pdf exists", () => {
+    render(<LectureViewer lectureId="lecture-1" title="HPMP" materialType="html" hasDisplayPdf />);
+
+    expect(screen.getByTitle("HPMP")).toBeInTheDocument();
+    expect(screen.queryByText("페이지 준비 중")).not.toBeInTheDocument();
+  });
 });
