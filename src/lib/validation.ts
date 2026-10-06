@@ -346,6 +346,8 @@ export const linkLectureAccessCodeSchema = z.object({
   sortOrder: z.number().int().min(0).default(0)
 });
 
+export const deleteArtifactSchema = z.object({ id: z.string().uuid() });
+
 export const artifactSchema = z
   .object({
     lectureId: z.string().uuid(),

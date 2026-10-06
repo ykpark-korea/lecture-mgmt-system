@@ -43,6 +43,29 @@ const existingPdfLecture = {
   material_storage_path: "22222222-2222-4222-8222-222222222222/2.pdf"
 };
 
+const practiceArtifact = {
+  id: "33333333-3333-4333-8333-333333333333",
+  lecture_id: existingHtmlLecture.id,
+  type: "file",
+  category: "practice",
+  title: "실습 교안",
+  description: "",
+  url: null,
+  storage_path: `${existingHtmlLecture.id}/guide.pdf`,
+  is_active: true,
+  sort_order: 0,
+  created_at: "2026-05-18T00:00:00.000Z",
+  updated_at: "2026-05-18T00:00:00.000Z"
+};
+
+function mockWorkspaceLoadWithArtifact() {
+  return vi.fn()
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ lectures: [existingHtmlLecture] }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ artifacts: [practiceArtifact] }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ codes: [] }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ links: [] }) });
+}
+
 describe("LectureAdminWorkspace", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -146,5 +169,92 @@ describe("LectureAdminWorkspace", () => {
       materialType: "pdf",
       materialStoragePath: `${existingHtmlLecture.id}/2.pdf`
     });
+  });
+
+  it("deletes a learning material after the admin confirms and removes it from the list", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const fetchMock = mockWorkspaceLoadWithArtifact().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, storageRemoved: true })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.click(screen.getByRole("button", { name: "실습 교안 삭제" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[4][0]).toBe("/api/admin/artifacts");
+    expect(fetchMock.mock.calls[4][1]).toMatchObject({ method: "DELETE" });
+    expect(JSON.parse(fetchMock.mock.calls[4][1].body)).toEqual({ id: practiceArtifact.id });
+    await waitFor(() => expect(screen.queryByText("실습 교안")).not.toBeInTheDocument());
+  });
+
+  it("does not delete a learning material when the admin cancels the confirmation", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const fetchMock = mockWorkspaceLoadWithArtifact();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.click(screen.getByRole("button", { name: "실습 교안 삭제" }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(screen.getByText("실습 교안")).toBeInTheDocument();
+  });
+
+  it("keeps the learning material and shows the server error when deletion fails", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const fetchMock = mockWorkspaceLoadWithArtifact().mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error: "삭제 서버 오류" })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.click(screen.getByRole("button", { name: "실습 교안 삭제" }));
+
+    expect(await screen.findByText("삭제 서버 오류")).toBeInTheDocument();
+    expect(screen.getByText("실습 교안")).toBeInTheDocument();
+  });
+
+  it("drops a learning material that was already deleted elsewhere instead of keeping a stale row", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const fetchMock = mockWorkspaceLoadWithArtifact().mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: "Artifact not found" })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.click(screen.getByRole("button", { name: "실습 교안 삭제" }));
+
+    expect(await screen.findByText("이미 삭제된 학습자료입니다.")).toBeInTheDocument();
+    expect(screen.queryByText("실습 교안")).not.toBeInTheDocument();
+  });
+
+  it("warns that the stored file may remain when only the database row was deleted", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const fetchMock = mockWorkspaceLoadWithArtifact().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, storageRemoved: false })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.click(screen.getByRole("button", { name: "실습 교안 삭제" }));
+
+    expect(await screen.findByText(/저장소 파일은 남아 있을 수 있습니다/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("실습 교안")).not.toBeInTheDocument());
   });
 });

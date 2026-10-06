@@ -151,6 +151,15 @@ export async function createSignedUploadUrl(bucket: StorageBucket, path: string)
   return data.signedUrl;
 }
 
+export async function removeStorageObject(bucket: StorageBucket, path: string): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+
+  if (error) {
+    throw error;
+  }
+}
+
 function buildContentDisposition(disposition: "inline" | "attachment", fileName: string) {
   const safeFileName = fileName.replace(/[\\"]/g, "_").replace(/[\r\n]/g, " ").trim() || "download";
 

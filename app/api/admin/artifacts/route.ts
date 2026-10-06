@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireActiveAdminSession } from "@/src/lib/admin";
+import { removeStorageObject } from "@/src/lib/storage";
 import { createSupabaseServiceClient } from "@/src/lib/supabase";
 import type { Database } from "@/src/types/database";
-import { artifactSchema } from "@/src/lib/validation";
+import { artifactSchema, deleteArtifactSchema } from "@/src/lib/validation";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type InsertTable<TPayload> = {
@@ -11,6 +12,9 @@ type InsertTable<TPayload> = {
       single(): Promise<{ data: unknown; error: { message: string } | null }>;
     };
   };
+};
+type DeletedArtifactRow = {
+  storage_path: string | null;
 };
 
 export async function GET(request: NextRequest) {
@@ -82,4 +86,53 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ artifact: data }, { status: 201 });
+}
+
+export async function DELETE(request: NextRequest) {
+  if (!(await requireActiveAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = deleteArtifactSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid artifact id", issues: parsed.error.issues }, { status: 400 });
+  }
+
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("artifacts")
+    .delete()
+    .eq("id", parsed.data.id)
+    .select("storage_path")
+    .maybeSingle();
+  const deleted = data as DeletedArtifactRow | null;
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!deleted) {
+    return NextResponse.json({ error: "Artifact not found" }, { status: 404 });
+  }
+
+  let storageRemoved = true;
+
+  if (deleted.storage_path) {
+    try {
+      await removeStorageObject("lecture-artifacts", deleted.storage_path);
+    } catch (storageError) {
+      storageRemoved = false;
+      console.error("Failed to remove artifact file", deleted.storage_path, storageError);
+    }
+  }
+
+  return NextResponse.json({ ok: true, storageRemoved });
 }

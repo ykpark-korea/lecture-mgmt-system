@@ -12,6 +12,7 @@ import {
   Save,
   Search,
   ShieldCheck,
+  Trash2,
   XCircle
 } from "lucide-react";
 import { detectLectureMaterialType, getLectureMaterialTypeLabel } from "@/src/lib/materials";
@@ -495,6 +496,41 @@ export function LectureAdminWorkspace() {
     }
   }
 
+  async function deleteArtifact(artifact: Artifact) {
+    if (!window.confirm(`"${artifact.title}" 학습자료를 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)) return;
+
+    setIsSaving(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/admin/artifacts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: artifact.id })
+      });
+      const data = await response.json();
+
+      if (response.status === 404) {
+        setArtifacts((current) => current.filter((item) => item.id !== artifact.id));
+        setMessage("이미 삭제된 학습자료입니다.");
+        return;
+      }
+
+      if (!response.ok) throw new Error(data.error ?? "학습자료 삭제에 실패했습니다.");
+
+      setArtifacts((current) => current.filter((item) => item.id !== artifact.id));
+      setMessage(
+        data.storageRemoved === false
+          ? "학습자료를 삭제했습니다. 저장소 파일은 남아 있을 수 있습니다."
+          : "학습자료를 삭제했습니다."
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "학습자료 삭제에 실패했습니다.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function linkAccessCode() {
     if (!selectedLecture || !linkCodeId) {
       setMessage("강좌와 접속 코드를 선택해 주세요.");
@@ -749,6 +785,7 @@ export function LectureAdminWorkspace() {
               updateForm={updateArtifactForm}
               setArtifactFile={setArtifactFile}
               createArtifact={createArtifact}
+              deleteArtifact={deleteArtifact}
               isSaving={isSaving}
             />
           ) : null}
@@ -928,6 +965,7 @@ function ArtifactsTab({
   updateForm,
   setArtifactFile,
   createArtifact,
+  deleteArtifact,
   isSaving
 }: {
   selectedLecture: Lecture | null;
@@ -937,6 +975,7 @@ function ArtifactsTab({
   updateForm: (field: keyof typeof emptyArtifactForm, value: string | boolean) => void;
   setArtifactFile: (file: File | null) => void;
   createArtifact: () => void;
+  deleteArtifact: (artifact: Artifact) => void;
   isSaving: boolean;
 }) {
   if (!selectedLecture) return <EmptySelection message="강의를 저장한 뒤 학습자료를 등록할 수 있습니다." />;
@@ -953,7 +992,18 @@ function ArtifactsTab({
                 {artifact.type === "link" ? <LinkIcon size={15} aria-hidden="true" /> : <FileUp size={15} aria-hidden="true" />}
                 <span className="truncate">{artifact.title}</span>
               </span>
-              <span className="text-xs font-bold text-slate-500">{categoryLabels[artifact.category]}</span>
+              <span className="inline-flex shrink-0 items-center gap-2">
+                <span className="text-xs font-bold text-slate-500">{categoryLabels[artifact.category]}</span>
+                <button
+                  type="button"
+                  onClick={() => deleteArtifact(artifact)}
+                  disabled={isSaving}
+                  aria-label={`${artifact.title} 삭제`}
+                  className="inline-flex size-7 items-center justify-center rounded-md border border-cool-mist text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:opacity-60"
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                </button>
+              </span>
             </div>
             {artifact.description ? <p className="mt-1 text-xs leading-5 text-slate-500">{artifact.description}</p> : null}
             {artifact.url ? <a href={artifact.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-cool-blue"><ExternalLink size={13} aria-hidden="true" />링크 열기</a> : null}

@@ -1,19 +1,33 @@
-import { describe, expect, it, vi } from "vitest";
-import { buildStoragePath, buildUniqueStoragePath, createPrivateObjectResponse } from "@/src/lib/storage";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  buildStoragePath,
+  buildUniqueStoragePath,
+  createPrivateObjectResponse,
+  removeStorageObject
+} from "@/src/lib/storage";
 
 const createSignedUrl = vi.fn();
+const remove = vi.fn();
+const storageFrom = vi.fn();
 
 vi.mock("@/src/lib/supabase", () => ({
   createSupabaseServiceClient: () => ({
     storage: {
-      from: () => ({
-        createSignedUrl
-      })
+      from: (bucket: string) => {
+        storageFrom(bucket);
+
+        return { createSignedUrl, remove };
+      }
     }
   })
 }));
 
 describe("storage", () => {
+  beforeEach(() => {
+    storageFrom.mockClear();
+    remove.mockClear();
+  });
+
   it("builds safe storage paths for owner files", () => {
     expect(buildStoragePath("lecture-html", "lecture-1", "HPMP high.html")).toBe(
       "lecture-1/hpmp-high.html"
@@ -92,5 +106,22 @@ describe("storage", () => {
 
     expect(response.headers.get("content-disposition")).toContain("attachment");
     expect(response.headers.get("content-disposition")).toContain("practice.pdf");
+  });
+
+  it("removes exactly the requested object from the requested bucket", async () => {
+    remove.mockResolvedValueOnce({ data: [], error: null });
+
+    await removeStorageObject("lecture-artifacts", "lecture-1/practice.pdf");
+
+    expect(storageFrom).toHaveBeenCalledWith("lecture-artifacts");
+    expect(remove).toHaveBeenCalledWith(["lecture-1/practice.pdf"]);
+  });
+
+  it("surfaces storage errors instead of swallowing them when removing an object", async () => {
+    remove.mockResolvedValueOnce({ data: null, error: { message: "storage unavailable" } });
+
+    await expect(removeStorageObject("lecture-artifacts", "lecture-1/practice.pdf")).rejects.toMatchObject({
+      message: "storage unavailable"
+    });
   });
 });
