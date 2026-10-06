@@ -143,7 +143,7 @@ function getLectureMaterialContentTypeFromFileName(fileName: string) {
 }
 
 function getArtifactContentTypeFromFileName(fileName: string) {
-  if (fileName.endsWith(".html") || fileName.endsWith(".htm")) return "text/html";
+  if (fileName.endsWith(".html") || fileName.endsWith(".htm")) return "application/octet-stream";
   if (fileName.endsWith(".pdf")) return "application/octet-stream";
   if (fileName.endsWith(".zip")) return "application/zip";
   if (fileName.endsWith(".xlsx") || fileName.endsWith(".pptx") || fileName.endsWith(".docx")) return "application/octet-stream";

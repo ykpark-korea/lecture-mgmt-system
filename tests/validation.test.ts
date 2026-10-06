@@ -194,7 +194,9 @@ describe("validation", () => {
     );
     expect(normalizeUploadContentType("lecture-artifacts", "sheet.xlsx", "")).toBe("application/octet-stream");
     expect(normalizeUploadContentType("lecture-artifacts", "practice.pdf", "application/pdf")).toBe("application/octet-stream");
-    expect(normalizeUploadContentType("lecture-artifacts", "practice.html", "application/octet-stream")).toBe("text/html");
+    expect(normalizeUploadContentType("lecture-artifacts", "practice.html", "application/octet-stream")).toBe("application/octet-stream");
+    expect(normalizeUploadContentType("lecture-artifacts", "practice.html", "text/html")).toBe("application/octet-stream");
+    expect(normalizeUploadContentType("lecture-artifacts", "practice.HTM", "text/html")).toBe("application/octet-stream");
     expect(normalizeUploadContentType("lecture-images", "hero.png", "image/jpeg")).toBeNull();
   });
 
