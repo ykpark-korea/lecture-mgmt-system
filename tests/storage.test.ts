@@ -108,6 +108,34 @@ describe("storage", () => {
     expect(response.headers.get("content-disposition")).toContain("practice.pdf");
   });
 
+  it("downloads under a Korean file name without putting non-ASCII characters in the plain filename header", async () => {
+    createSignedUrl.mockResolvedValueOnce({ data: { signedUrl: "https://signed.example/artifact" }, error: null });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(new Response("zip")));
+
+    const response = await createPrivateObjectResponse("lecture-artifacts", "lecture-1/file-1x.zip", 30, {
+      contentDisposition: "attachment",
+      fileName: "AX_실습 교안.zip"
+    });
+
+    expect(response.headers.get("content-disposition")).toBe(
+      `attachment; filename="AX___ __.zip"; filename*=UTF-8''AX_%EC%8B%A4%EC%8A%B5%20%EA%B5%90%EC%95%88.zip`
+    );
+  });
+
+  it("percent-encodes the characters RFC 5987 does not allow in the extended filename", async () => {
+    createSignedUrl.mockResolvedValueOnce({ data: { signedUrl: "https://signed.example/artifact" }, error: null });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(new Response("zip")));
+
+    const response = await createPrivateObjectResponse("lecture-artifacts", "lecture-1/a.zip", 30, {
+      contentDisposition: "attachment",
+      fileName: "it's (1)*.zip"
+    });
+
+    expect(response.headers.get("content-disposition")).toBe(
+      `attachment; filename="it's (1)*.zip"; filename*=UTF-8''it%27s%20%281%29%2A.zip`
+    );
+  });
+
   it("removes exactly the requested object from the requested bucket", async () => {
     remove.mockResolvedValueOnce({ data: [], error: null });
 

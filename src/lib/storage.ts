@@ -162,6 +162,11 @@ export async function removeStorageObject(bucket: StorageBucket, path: string): 
 
 function buildContentDisposition(disposition: "inline" | "attachment", fileName: string) {
   const safeFileName = fileName.replace(/[\\"]/g, "_").replace(/[\r\n]/g, " ").trim() || "download";
+  const asciiFileName = safeFileName.replace(/[^\x20-\x7e]/g, "_");
+  const encodedFileName = encodeURIComponent(safeFileName).replace(
+    /['()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+  );
 
-  return `${disposition}; filename="${safeFileName}"; filename*=UTF-8''${encodeURIComponent(safeFileName)}`;
+  return `${disposition}; filename="${asciiFileName}"; filename*=UTF-8''${encodedFileName}`;
 }

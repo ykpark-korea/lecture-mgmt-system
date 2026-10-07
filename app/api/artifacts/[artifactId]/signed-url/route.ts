@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getActiveArtifact } from "@/src/lib/artifacts";
+import { getActiveArtifact, getArtifactDownloadName } from "@/src/lib/artifacts";
 import { readLearnerSession } from "@/src/lib/cookies";
 import { getAuthorizedLecture } from "@/src/lib/lectures";
 import { createPrivateObjectResponse } from "@/src/lib/storage";
@@ -31,6 +31,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   return createPrivateObjectResponse("lecture-artifacts", artifact.storage_path, 30, {
-    contentDisposition: "attachment"
+    contentDisposition: "attachment",
+    fileName: getArtifactDownloadName(artifact)
   });
 }

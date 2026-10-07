@@ -61,6 +61,7 @@ export interface Artifact {
   description: string;
   url: string | null;
   storage_path: string | null;
+  file_name: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -153,12 +154,13 @@ type LectureAccessCodeUpdate = Partial<LectureAccessCodeInsert>;
 
 type ArtifactInsert = Omit<
   Artifact,
-  "id" | "description" | "url" | "storage_path" | "is_active" | "sort_order" | "created_at" | "updated_at"
+  "id" | "description" | "url" | "storage_path" | "file_name" | "is_active" | "sort_order" | "created_at" | "updated_at"
 > & {
   id?: string;
   description?: string;
   url?: string | null;
   storage_path?: string | null;
+  file_name?: string | null;
   is_active?: boolean;
   sort_order?: number;
   created_at?: string;
