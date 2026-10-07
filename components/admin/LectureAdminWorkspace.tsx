@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   FileUp,
   LinkIcon,
@@ -86,7 +88,6 @@ const emptyArtifactForm = {
   type: "file" as ArtifactType,
   category: "practice" as ArtifactCategory,
   url: "",
-  sortOrder: "0",
   isActive: true
 };
 
@@ -462,6 +463,8 @@ export function LectureAdminWorkspace() {
       return;
     }
 
+    const nextSortOrder = selectedArtifacts.reduce((max, item) => Math.max(max, item.sort_order), -1) + 1;
+
     setIsSaving(true);
     setMessage("");
 
@@ -476,9 +479,9 @@ export function LectureAdminWorkspace() {
           description: artifactForm.description,
           type: artifactForm.type,
           category: artifactForm.category,
-          sortOrder: Number.parseInt(artifactForm.sortOrder || "0", 10),
+          sortOrder: nextSortOrder,
           isActive: artifactForm.isActive,
-          ...(artifactForm.type === "link" ? { url: artifactForm.url } : { storagePath })
+          ...(artifactForm.type === "link" ? { url: artifactForm.url } : { storagePath, fileName: artifactFile?.name })
         })
       });
       const data = await response.json();
@@ -526,6 +529,49 @@ export function LectureAdminWorkspace() {
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "학습자료 삭제에 실패했습니다.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function moveArtifact(artifact: Artifact, direction: -1 | 1) {
+    if (!selectedLecture) return;
+
+    const index = selectedArtifacts.findIndex((item) => item.id === artifact.id);
+    const targetIndex = index + direction;
+
+    if (index < 0 || targetIndex < 0 || targetIndex >= selectedArtifacts.length) return;
+
+    const reordered = [...selectedArtifacts];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+
+    setIsSaving(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/admin/artifacts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lectureId: selectedLecture.id, orderedIds: reordered.map((item) => item.id) })
+      });
+      const data = await response.json();
+
+      if (response.status === 409) {
+        throw new Error("다른 곳에서 학습자료 목록이 바뀌었습니다. 새로고침 후 다시 시도해 주세요.");
+      }
+
+      if (!response.ok) throw new Error(data.error ?? "학습자료 순서 변경에 실패했습니다.");
+
+      const sortOrderById = new Map(reordered.map((item, position) => [item.id, position]));
+
+      setArtifacts((current) =>
+        current
+          .map((item) => (sortOrderById.has(item.id) ? { ...item, sort_order: sortOrderById.get(item.id) ?? item.sort_order } : item))
+          .sort((a, b) => a.sort_order - b.sort_order)
+      );
+      setMessage("학습자료 순서를 변경했습니다.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "학습자료 순서 변경에 실패했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -786,6 +832,7 @@ export function LectureAdminWorkspace() {
               setArtifactFile={setArtifactFile}
               createArtifact={createArtifact}
               deleteArtifact={deleteArtifact}
+              moveArtifact={moveArtifact}
               isSaving={isSaving}
             />
           ) : null}
@@ -966,6 +1013,7 @@ function ArtifactsTab({
   setArtifactFile,
   createArtifact,
   deleteArtifact,
+  moveArtifact,
   isSaving
 }: {
   selectedLecture: Lecture | null;
@@ -976,6 +1024,7 @@ function ArtifactsTab({
   setArtifactFile: (file: File | null) => void;
   createArtifact: () => void;
   deleteArtifact: (artifact: Artifact) => void;
+  moveArtifact: (artifact: Artifact, direction: -1 | 1) => void;
   isSaving: boolean;
 }) {
   if (!selectedLecture) return <EmptySelection message="강의를 저장한 뒤 학습자료를 등록할 수 있습니다." />;
@@ -985,7 +1034,7 @@ function ArtifactsTab({
       <div className="grid gap-3">
         <h3 className="text-sm font-black text-cool-ink">등록된 자료</h3>
         {artifacts.length === 0 ? <p className="rounded-md border border-dashed border-cool-mist px-3 py-5 text-sm text-slate-500">아직 등록된 자료가 없습니다.</p> : null}
-        {artifacts.map((artifact) => (
+        {artifacts.map((artifact, index) => (
           <div key={artifact.id} className="rounded-md border border-cool-mist bg-white px-3 py-3">
             <div className="flex items-center justify-between gap-3">
               <span className="inline-flex min-w-0 items-center gap-2 text-sm font-black text-cool-ink">
@@ -994,6 +1043,24 @@ function ArtifactsTab({
               </span>
               <span className="inline-flex shrink-0 items-center gap-2">
                 <span className="text-xs font-bold text-slate-500">{categoryLabels[artifact.category]}</span>
+                <button
+                  type="button"
+                  onClick={() => moveArtifact(artifact, -1)}
+                  disabled={isSaving || index === 0}
+                  aria-label={`${artifact.title} 위로 이동`}
+                  className="inline-flex size-7 items-center justify-center rounded-md border border-cool-mist text-slate-500 transition hover:border-cool-blue/50 hover:bg-cool-ice hover:text-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronUp size={14} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveArtifact(artifact, 1)}
+                  disabled={isSaving || index === artifacts.length - 1}
+                  aria-label={`${artifact.title} 아래로 이동`}
+                  className="inline-flex size-7 items-center justify-center rounded-md border border-cool-mist text-slate-500 transition hover:border-cool-blue/50 hover:bg-cool-ice hover:text-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronDown size={14} aria-hidden="true" />
+                </button>
                 <button
                   type="button"
                   onClick={() => deleteArtifact(artifact)}
@@ -1049,16 +1116,10 @@ function ArtifactsTab({
             설명
             <textarea id="workspace-artifact-description" value={form.description} onChange={(event) => updateForm("description", event.target.value)} className="mt-2 min-h-20 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20" placeholder="자료 패널에 표시할 설명" />
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-sm font-bold text-slate-700" htmlFor="workspace-artifact-sort">
-              정렬
-              <input id="workspace-artifact-sort" type="number" min="0" value={form.sortOrder} onChange={(event) => updateForm("sortOrder", event.target.value)} className="mt-2 w-full rounded-md border border-cool-mist px-3 py-2 text-sm focus:border-cool-blue focus:outline-none focus:ring-4 focus:ring-cool-blue/20" />
-            </label>
-            <label className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-slate-700">
-              <input type="checkbox" checked={form.isActive} onChange={(event) => updateForm("isActive", event.target.checked)} className="size-4 rounded border-cool-mist text-cool-blue" />
-              활성화
-            </label>
-          </div>
+          <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
+            <input type="checkbox" checked={form.isActive} onChange={(event) => updateForm("isActive", event.target.checked)} className="size-4 rounded border-cool-mist text-cool-blue" />
+            활성화
+          </label>
           <button type="button" onClick={createArtifact} disabled={isSaving} className="inline-flex items-center justify-center gap-2 rounded-md bg-cool-blue px-4 py-2 text-sm font-bold text-white shadow-soft transition hover:bg-blue-600 disabled:opacity-60">
             {isSaving ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
             자료 등록

@@ -283,4 +283,48 @@ describe("validation", () => {
       }).url
     ).toBe("https://example.com/reference");
   });
+
+  it("keeps the original file name of a file artifact", () => {
+    expect(
+      artifactSchema.parse({
+        lectureId,
+        type: "file",
+        category: "practice",
+        title: "Practice file",
+        storagePath: `${lectureId}/practice-1a2b3c4d.zip`,
+        fileName: "AX_실습_교육생용.zip"
+      }).fileName
+    ).toBe("AX_실습_교육생용.zip");
+  });
+
+  it.each([
+    { name: "a path separator", fileName: "a/b.zip" },
+    { name: "a backslash", fileName: "a\\b.zip" },
+    { name: "an empty name", fileName: "   " },
+    { name: "a name longer than 200 characters", fileName: `${"a".repeat(201)}.zip` }
+  ])("rejects a file artifact file name with $name", ({ fileName }) => {
+    expect(() =>
+      artifactSchema.parse({
+        lectureId,
+        type: "file",
+        category: "practice",
+        title: "Practice file",
+        storagePath: `${lectureId}/practice-1a2b3c4d.zip`,
+        fileName
+      })
+    ).toThrow();
+  });
+
+  it("rejects a file name on link artifacts", () => {
+    expect(() =>
+      artifactSchema.parse({
+        lectureId,
+        type: "link",
+        category: "external",
+        title: "Reference",
+        url: "https://example.com/reference",
+        fileName: "reference.pdf"
+      })
+    ).toThrow();
+  });
 });

@@ -66,6 +66,24 @@ function mockWorkspaceLoadWithArtifact() {
     .mockResolvedValueOnce({ ok: true, json: async () => ({ links: [] }) });
 }
 
+const orderedArtifacts = [
+  { ...practiceArtifact, id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", title: "자료 A", sort_order: 0 },
+  { ...practiceArtifact, id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", title: "자료 B", sort_order: 1 },
+  { ...practiceArtifact, id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", title: "자료 C", sort_order: 2 }
+];
+
+function mockWorkspaceLoadWithArtifacts(artifacts: unknown[]) {
+  return vi.fn()
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ lectures: [existingHtmlLecture] }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ artifacts }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ codes: [] }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ links: [] }) });
+}
+
+function displayedArtifactTitles() {
+  return screen.getAllByText(/^자료 [ABC]$/).map((element) => element.textContent);
+}
+
 describe("LectureAdminWorkspace", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -256,5 +274,122 @@ describe("LectureAdminWorkspace", () => {
 
     expect(await screen.findByText(/저장소 파일은 남아 있을 수 있습니다/)).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText("실습 교안")).not.toBeInTheDocument());
+  });
+
+  it("saves the original file name and appends a new material after the last one", async () => {
+    const existing = { ...practiceArtifact, sort_order: 4 };
+    const created = { ...practiceArtifact, id: "44444444-4444-4444-8444-444444444444", title: "새 자료", sort_order: 5 };
+    const fetchMock = mockWorkspaceLoadWithArtifacts([existing])
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          path: `${existingHtmlLecture.id}/guide-1a2b3c4d.zip`,
+          upload: { signedUrl: "https://upload.example.com", contentType: "application/zip" }
+        })
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ artifact: created }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.change(screen.getByLabelText("자료명"), { target: { value: "새 자료" } });
+    fireEvent.change(screen.getByLabelText("파일"), {
+      target: { files: [new File(["zip"], "AX_실습 교안.zip", { type: "application/zip" })] }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "자료 등록" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(7));
+    expect(fetchMock.mock.calls[6][0]).toBe("/api/admin/artifacts");
+    expect(JSON.parse(fetchMock.mock.calls[6][1].body)).toMatchObject({
+      title: "새 자료",
+      storagePath: `${existingHtmlLecture.id}/guide-1a2b3c4d.zip`,
+      fileName: "AX_실습 교안.zip",
+      sortOrder: 5
+    });
+  });
+
+  it("moves a material up and persists the new order for the whole lecture", async () => {
+    const fetchMock = mockWorkspaceLoadWithArtifacts(orderedArtifacts).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    expect(displayedArtifactTitles()).toEqual(["자료 A", "자료 B", "자료 C"]);
+    fireEvent.click(screen.getByRole("button", { name: "자료 C 위로 이동" }));
+
+    await waitFor(() => expect(displayedArtifactTitles()).toEqual(["자료 A", "자료 C", "자료 B"]));
+    expect(fetchMock.mock.calls[4][0]).toBe("/api/admin/artifacts");
+    expect(fetchMock.mock.calls[4][1]).toMatchObject({ method: "PATCH" });
+    expect(JSON.parse(fetchMock.mock.calls[4][1].body)).toEqual({
+      lectureId: existingHtmlLecture.id,
+      orderedIds: [orderedArtifacts[0].id, orderedArtifacts[2].id, orderedArtifacts[1].id]
+    });
+  });
+
+  it("moves a material down", async () => {
+    const fetchMock = mockWorkspaceLoadWithArtifacts(orderedArtifacts).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.click(screen.getByRole("button", { name: "자료 A 아래로 이동" }));
+
+    await waitFor(() => expect(displayedArtifactTitles()).toEqual(["자료 B", "자료 A", "자료 C"]));
+  });
+
+  it("cannot move the first material up or the last material down", async () => {
+    vi.stubGlobal("fetch", mockWorkspaceLoadWithArtifacts(orderedArtifacts));
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+
+    expect(screen.getByRole("button", { name: "자료 A 위로 이동" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "자료 C 아래로 이동" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "자료 B 위로 이동" })).toBeEnabled();
+  });
+
+  it("keeps the shown order and reports the error when saving the order fails", async () => {
+    const fetchMock = mockWorkspaceLoadWithArtifacts(orderedArtifacts).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: "순서 저장 서버 오류" })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.click(screen.getByRole("button", { name: "자료 B 위로 이동" }));
+
+    expect(await screen.findByText("순서 저장 서버 오류")).toBeInTheDocument();
+    expect(displayedArtifactTitles()).toEqual(["자료 A", "자료 B", "자료 C"]);
+  });
+
+  it("asks the admin to reload when the material list changed elsewhere while reordering", async () => {
+    const fetchMock = mockWorkspaceLoadWithArtifacts(orderedArtifacts).mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: "Artifact list changed" })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LectureAdminWorkspace />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "학습자료" }));
+    fireEvent.click(screen.getByRole("button", { name: "자료 B 위로 이동" }));
+
+    expect(await screen.findByText(/새로고침 후 다시 시도/)).toBeInTheDocument();
+    expect(displayedArtifactTitles()).toEqual(["자료 A", "자료 B", "자료 C"]);
   });
 });

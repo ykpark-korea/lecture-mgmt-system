@@ -348,6 +348,16 @@ export const linkLectureAccessCodeSchema = z.object({
 
 export const deleteArtifactSchema = z.object({ id: z.string().uuid() });
 
+export const reorderArtifactsSchema = z
+  .object({
+    lectureId: z.string().uuid(),
+    orderedIds: z.array(z.string().uuid()).min(1).max(200)
+  })
+  .refine((value) => new Set(value.orderedIds).size === value.orderedIds.length, {
+    path: ["orderedIds"],
+    message: "orderedIds must not contain duplicates"
+  });
+
 export const artifactSchema = z
   .object({
     lectureId: z.string().uuid(),
@@ -357,6 +367,13 @@ export const artifactSchema = z
     description: z.string().trim().max(500).optional(),
     url: httpUrlSchema.optional(),
     storagePath: z.string().trim().min(1).optional(),
+    fileName: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .refine((name) => !/[\\/]/.test(name), { message: "fileName must not contain path separators" })
+      .optional(),
     isActive: z.boolean().default(true),
     sortOrder: z.number().int().min(0).default(0)
   })
@@ -384,6 +401,10 @@ export const artifactSchema = z
 
       if (value.storagePath) {
         context.addIssue({ code: "custom", path: ["storagePath"], message: "link artifact must not include storagePath" });
+      }
+
+      if (value.fileName) {
+        context.addIssue({ code: "custom", path: ["fileName"], message: "link artifact must not include fileName" });
       }
     }
   });

@@ -3,7 +3,7 @@ import { requireActiveAdminSession } from "@/src/lib/admin";
 import { removeStorageObject } from "@/src/lib/storage";
 import { createSupabaseServiceClient } from "@/src/lib/supabase";
 import type { Database } from "@/src/types/database";
-import { artifactSchema, deleteArtifactSchema } from "@/src/lib/validation";
+import { artifactSchema, deleteArtifactSchema, reorderArtifactsSchema } from "@/src/lib/validation";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type InsertTable<TPayload> = {
@@ -15,6 +15,13 @@ type InsertTable<TPayload> = {
 };
 type DeletedArtifactRow = {
   storage_path: string | null;
+};
+type ReorderUpdateTable = {
+  update(value: { sort_order: number }): {
+    eq(column: "id", value: string): {
+      eq(column: "lecture_id", value: string): Promise<{ error: { message: string } | null }>;
+    };
+  };
 };
 
 export async function GET(request: NextRequest) {
@@ -29,7 +36,11 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createSupabaseServiceClient();
-  let query = supabase.from("artifacts").select("*").order("sort_order", { ascending: true });
+  let query = supabase
+    .from("artifacts")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
 
   if (lectureId) {
     query = query.eq("lecture_id", lectureId);
@@ -71,6 +82,7 @@ export async function POST(request: NextRequest) {
     description: input.description ?? "",
     url: input.url ?? null,
     storage_path: input.storagePath ?? null,
+    file_name: input.fileName ?? null,
     is_active: input.isActive,
     sort_order: input.sortOrder
   } satisfies Database["public"]["Tables"]["artifacts"]["Insert"];
@@ -135,4 +147,49 @@ export async function DELETE(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, storageRemoved });
+}
+
+export async function PATCH(request: NextRequest) {
+  if (!(await requireActiveAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = reorderArtifactsSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid artifact order", issues: parsed.error.issues }, { status: 400 });
+  }
+
+  const { lectureId, orderedIds } = parsed.data;
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase.from("artifacts").select("id").eq("lecture_id", lectureId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const currentIds = new Set(((data ?? []) as { id: string }[]).map((row) => row.id));
+
+  if (currentIds.size !== orderedIds.length || orderedIds.some((id) => !currentIds.has(id))) {
+    return NextResponse.json({ error: "Artifact list changed" }, { status: 409 });
+  }
+
+  const artifactsTable = supabase.from("artifacts") as unknown as ReorderUpdateTable;
+  const results = await Promise.all(
+    orderedIds.map((id, position) => artifactsTable.update({ sort_order: position }).eq("id", id).eq("lecture_id", lectureId))
+  );
+  const failed = results.find((result) => result.error);
+
+  if (failed?.error) {
+    return NextResponse.json({ error: failed.error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }
